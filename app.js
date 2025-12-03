@@ -24,19 +24,19 @@ function hideLoading() { loadingOverlay.classList.remove('active'); }
 
 function formatMoney(amount) {
     const num = parseFloat(amount) || 0;
-    return num.toFixed(2).replace('.', ',') + '€';
+    return num.toFixed(2).replace('.', ',') + ' EUR';
 }
 
 function formatDate(dateStr) {
     if (!dateStr) return '--';
     const date = new Date(dateStr);
-    return `${date.getDate().toString().padStart(2,'0')}/${(date.getMonth()+1).toString().padStart(2,'0')}`;
+    return date.getDate().toString().padStart(2,'0') + '/' + (date.getMonth()+1).toString().padStart(2,'0');
 }
 
 function formatDateFull(dateStr) {
     if (!dateStr) return '--';
     const date = new Date(dateStr);
-    return `${date.getDate().toString().padStart(2,'0')}/${(date.getMonth()+1).toString().padStart(2,'0')}/${date.getFullYear()}`;
+    return date.getDate().toString().padStart(2,'0') + '/' + (date.getMonth()+1).toString().padStart(2,'0') + '/' + date.getFullYear();
 }
 
 function showScreen(screen) {
@@ -51,7 +51,7 @@ async function login() {
     const password = inputPassword.value.trim();
     
     if (!numero) {
-        loginError.textContent = 'Introduce tu número de caja';
+        loginError.textContent = 'Introduce tu numero de caja';
         return;
     }
     
@@ -66,26 +66,25 @@ async function login() {
             .maybeSingle();
         
         if (error) {
-            loginError.textContent = 'Error de conexión';
+            loginError.textContent = 'Error de conexion';
             hideLoading();
             return;
         }
         
         if (!data) {
-            loginError.textContent = 'No se encontró ninguna caja con ese número';
+            loginError.textContent = 'No se encontro ninguna caja con ese numero';
             hideLoading();
             return;
         }
         
-        // Si tiene contraseña, verificarla
         if (data.password) {
             if (!password) {
-                loginError.textContent = 'Introduce tu contraseña';
+                loginError.textContent = 'Introduce tu contrasena';
                 hideLoading();
                 return;
             }
             if (data.password !== password) {
-                loginError.textContent = 'Contraseña incorrecta';
+                loginError.textContent = 'Contrasena incorrecta';
                 hideLoading();
                 return;
             }
@@ -102,9 +101,8 @@ async function login() {
         mostrarDatosCliente();
         showScreen(mainScreen);
         
-        // Si no tiene contraseña, mostrar popup para crearla
         if (!data.password) {
-            setTimeout(() => mostrarPopupCrearPassword(), 500);
+            setTimeout(function() { mostrarPopupCrearPassword(); }, 500);
         }
         
     } catch (err) {
@@ -130,7 +128,7 @@ async function cargarVentas() {
 function mostrarDatosCliente() {
     if (!clienteActual) return;
     
-    document.getElementById('header-numero').textContent = `#${clienteActual.numero}`;
+    document.getElementById('header-numero').textContent = '#' + clienteActual.numero;
     document.getElementById('header-nombre').textContent = clienteActual.nombre || 'Cliente';
     
     const bonoTotal = parseFloat(clienteActual.bono_total) || 0;
@@ -141,7 +139,7 @@ function mostrarDatosCliente() {
     document.getElementById('bono-total').textContent = formatMoney(bonoTotal);
     document.getElementById('bono-gastado').textContent = formatMoney(bonoGastado);
     
-    const pendientes = ventasCliente.filter(v => !v.enviado);
+    const pendientes = ventasCliente.filter(function(v) { return !v.enviado; });
     document.getElementById('stat-en-caja').textContent = pendientes.length;
     document.getElementById('stat-total-compras').textContent = ventasCliente.length;
     
@@ -151,13 +149,13 @@ function mostrarDatosCliente() {
         document.getElementById('stat-ultima-compra').textContent = formatDate(ventasCliente[0].fecha);
     }
     
-    document.getElementById('estado-caja').textContent = pendientes.length > 0 ? `${pendientes.length} pendientes` : 'Vacía';
+    document.getElementById('estado-caja').textContent = pendientes.length > 0 ? pendientes.length + ' pendientes' : 'Vacia';
     renderizarListas();
 }
 
 function renderizarListas() {
-    const pendientes = ventasCliente.filter(v => !v.enviado);
-    const enviados = ventasCliente.filter(v => v.enviado);
+    const pendientes = ventasCliente.filter(function(v) { return !v.enviado; });
+    const enviados = ventasCliente.filter(function(v) { return v.enviado; });
     
     const listaEnCaja = document.getElementById('lista-en-caja');
     const emptyCaja = document.getElementById('empty-caja');
@@ -168,18 +166,12 @@ function renderizarListas() {
     } else {
         listaEnCaja.style.display = 'flex';
         emptyCaja.style.display = 'none';
-        listaEnCaja.innerHTML = pendientes.map(v => `
-            <div class="item-card">
-                <div class="item-info">
-                    <div class="item-name">${v.descripcion || 'Artículo'}</div>
-                    <div class="item-date">${formatDateFull(v.fecha)}</div>
-                </div>
-                <div class="item-status">
-                    <span class="item-price">${formatMoney(v.precio)}</span>
-                    <span class="status-badge pendiente">Pendiente</span>
-                </div>
-            </div>
-        `).join('');
+        let html = '';
+        for (let i = 0; i < pendientes.length; i++) {
+            const v = pendientes[i];
+            html += '<div class="item-card"><div class="item-info"><div class="item-name">' + (v.descripcion || 'Articulo') + '</div><div class="item-date">' + formatDateFull(v.fecha) + '</div></div><div class="item-status"><span class="item-price">' + formatMoney(v.precio) + '</span><span class="status-badge pendiente">Pendiente</span></div></div>';
+        }
+        listaEnCaja.innerHTML = html;
     }
     
     const listaHistorial = document.getElementById('lista-historial');
@@ -191,18 +183,12 @@ function renderizarListas() {
     } else {
         listaHistorial.style.display = 'flex';
         emptyHistorial.style.display = 'none';
-        listaHistorial.innerHTML = enviados.map(v => `
-            <div class="item-card">
-                <div class="item-info">
-                    <div class="item-name">${v.descripcion || 'Artículo'}</div>
-                    <div class="item-date">${formatDateFull(v.fecha)}</div>
-                </div>
-                <div class="item-status">
-                    <span class="item-price">${formatMoney(v.precio)}</span>
-                    <span class="status-badge enviado">Enviado ✓</span>
-                </div>
-            </div>
-        `).join('');
+        let html = '';
+        for (let i = 0; i < enviados.length; i++) {
+            const v = enviados[i];
+            html += '<div class="item-card"><div class="item-info"><div class="item-name">' + (v.descripcion || 'Articulo') + '</div><div class="item-date">' + formatDateFull(v.fecha) + '</div></div><div class="item-status"><span class="item-price">' + formatMoney(v.precio) + '</span><span class="status-badge enviado">Enviado</span></div></div>';
+        }
+        listaHistorial.innerHTML = html;
     }
 }
 
@@ -221,15 +207,18 @@ function logout() {
 
 // ========== TABS ==========
 function initTabs() {
-    document.querySelectorAll('.tab').forEach(tab => {
-        tab.addEventListener('click', () => {
-            const tabId = tab.dataset.tab;
-            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            tab.classList.add('active');
-            document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-            document.getElementById(`tab-${tabId}`).classList.add('active');
+    var tabs = document.querySelectorAll('.tab');
+    for (var i = 0; i < tabs.length; i++) {
+        tabs[i].addEventListener('click', function() {
+            var tabId = this.getAttribute('data-tab');
+            var allTabs = document.querySelectorAll('.tab');
+            for (var j = 0; j < allTabs.length; j++) { allTabs[j].classList.remove('active'); }
+            this.classList.add('active');
+            var panels = document.querySelectorAll('.tab-panel');
+            for (var k = 0; k < panels.length; k++) { panels[k].classList.remove('active'); }
+            document.getElementById('tab-' + tabId).classList.add('active');
         });
-    });
+    }
 }
 
 // ========== AUTO-LOGIN ==========
@@ -243,25 +232,25 @@ async function checkAutoLogin() {
     }
 }
 
-// ========== POPUP CREAR CONTRASEÑA ==========
+// ========== POPUP CREAR PASSWORD ==========
 function mostrarPopupCrearPassword() {
-    const popup = document.getElementById('popup-password');
+    var popup = document.getElementById('popup-password');
     if (popup) popup.classList.add('active');
 }
 
 function cerrarPopupPassword() {
-    const popup = document.getElementById('popup-password');
+    var popup = document.getElementById('popup-password');
     if (popup) popup.classList.remove('active');
 }
 
 async function guardarNuevaPassword() {
-    const password = document.getElementById('nueva-password').value.trim();
-    const confirmPassword = document.getElementById('confirmar-password').value.trim();
-    const errorMsg = document.getElementById('password-error');
+    var password = document.getElementById('nueva-password').value.trim();
+    var confirmPassword = document.getElementById('confirmar-password').value.trim();
+    var errorMsg = document.getElementById('password-error');
     
-    if (!password) { errorMsg.textContent = 'Introduce una contraseña'; return; }
-    if (password.length < 4) { errorMsg.textContent = 'Mínimo 4 caracteres'; return; }
-    if (password !== confirmPassword) { errorMsg.textContent = 'Las contraseñas no coinciden'; return; }
+    if (!password) { errorMsg.textContent = 'Introduce una contrasena'; return; }
+    if (password.length < 4) { errorMsg.textContent = 'Minimo 4 caracteres'; return; }
+    if (password !== confirmPassword) { errorMsg.textContent = 'Las contrasenas no coinciden'; return; }
     
     errorMsg.textContent = '';
     
@@ -277,7 +266,7 @@ async function guardarNuevaPassword() {
         localStorage.setItem('clientePassword', password);
         cerrarPopupPassword();
     } catch (err) {
-        errorMsg.textContent = 'Error de conexión';
+        errorMsg.textContent = 'Error de conexion';
     }
 }
 
@@ -287,9 +276,34 @@ function suscribirseACambios() {
     
     subscripcionCliente = supabase
         .channel('cliente-changes')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'clientes', filter: `numero=eq.${clienteActual.numero}` },
-            (payload) => { if (payload.new) { clienteActual = payload.new; mostrarDatosCliente(); } })
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'clientes', filter: 'numero=eq.' + clienteActual.numero },
+            function(payload) { if (payload.new) { clienteActual = payload.new; mostrarDatosCliente(); } })
         .subscribe();
     
     subscripcionVentas = supabase
-        .channel('ventas-changes
+        .channel('ventas-changes')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'ventas', filter: 'numero_cliente=eq.' + clienteActual.numero },
+            async function() { await cargarVentas(); mostrarDatosCliente(); })
+        .subscribe();
+}
+
+// ========== SERVICE WORKER ==========
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function() {
+        navigator.serviceWorker.register('sw.js').catch(function(err) { console.log('SW error:', err); });
+    });
+}
+
+// ========== EVENTOS ==========
+btnLogin.addEventListener('click', login);
+btnLogout.addEventListener('click', logout);
+inputNumero.addEventListener('keypress', function(e) { if (e.key === 'Enter') inputPassword.focus(); });
+inputPassword.addEventListener('keypress', function(e) { if (e.key === 'Enter') login(); });
+inputNumero.addEventListener('input', function() { loginError.textContent = ''; });
+inputPassword.addEventListener('input', function() { loginError.textContent = ''; });
+
+// ========== INIT ==========
+document.addEventListener('DOMContentLoaded', function() {
+    initTabs();
+    checkAutoLogin();
+});
