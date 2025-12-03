@@ -110,13 +110,19 @@ async function login() {
             if (!password) { loginError.textContent = 'Introduce tu contrasena'; hideLoading(); return; }
             if (data.password !== password) { loginError.textContent = 'Contrasena incorrecta'; hideLoading(); return; }
         }
+        // Si no tiene contraseña, no dejarlo entrar - primero debe crearla
+        if (!data.password) {
+            clienteActual = data;
+            hideLoading();
+            mostrarPopupCrearPassword();
+            return;
+        }
         clienteActual = data;
         localStorage.setItem('clienteNumero', data.numero);
-        if (data.password) localStorage.setItem('clientePassword', password);
+        localStorage.setItem('clientePassword', password);
         await cargarVentas();
         mostrarDatosCliente();
         showScreen(mainScreen);
-        if (!data.password) setTimeout(mostrarPopupCrearPassword, 500);
     } catch (err) { loginError.textContent = 'Error al conectar'; }
     hideLoading();
 }
@@ -215,22 +221,86 @@ async function checkAutoLogin() {
     if (savedNumero) { inputNumero.value = savedNumero; if (savedPassword) inputPassword.value = savedPassword; await login(); }
 }
 
-function mostrarPopupCrearPassword() { var popup = document.getElementById('popup-password'); if (popup) popup.classList.add('active'); }
-function cerrarPopupPassword() { var popup = document.getElementById('popup-password'); if (popup) popup.classList.remove('active'); }
+let telefonoVerificado = false;
+
+function mostrarPopupCrearPassword() {
+    telefonoVerificado = false;
+    var popup = document.getElementById('popup-password');
+    if (popup) {
+        popup.classList.add('active');
+        document.getElementById('verificar-telefono').value = '';
+        document.getElementById('nueva-password').value = '';
+        document.getElementById('confirmar-password').value = '';
+        document.getElementById('password-error').textContent = '';
+        document.getElementById('password-fields').style.display = 'none';
+        document.getElementById('btn-verificar-tel').style.display = 'block';
+        document.getElementById('btn-guardar-pwd').style.display = 'none';
+    }
+}
+
+function cerrarPopupPassword() {
+    var popup = document.getElementById('popup-password');
+    if (popup) popup.classList.remove('active');
+    telefonoVerificado = false;
+}
+
+function verificarTelefono() {
+    var digitos = document.getElementById('verificar-telefono').value.trim();
+    var errorMsg = document.getElementById('password-error');
+    
+    if (!digitos || digitos.length !== 4) {
+        errorMsg.textContent = 'Introduce los 4 ultimos digitos';
+        return;
+    }
+    
+    var telefono = clienteActual.telefono || '';
+    telefono = telefono.replace(/\s/g, '').replace(/-/g, '').replace(/\+/g, '');
+    
+    if (telefono.length < 4) {
+        errorMsg.textContent = 'No tienes telefono registrado. Contacta con soporte.';
+        return;
+    }
+    
+    var ultimos4 = telefono.slice(-4);
+    
+    if (digitos !== ultimos4) {
+        errorMsg.textContent = 'Los digitos no coinciden. Intentalo de nuevo.';
+        return;
+    }
+    
+    telefonoVerificado = true;
+    errorMsg.textContent = '';
+    document.getElementById('password-fields').style.display = 'block';
+    document.getElementById('btn-verificar-tel').style.display = 'none';
+    document.getElementById('btn-guardar-pwd').style.display = 'block';
+    document.getElementById('nueva-password').focus();
+}
 
 async function guardarNuevaPassword() {
+    var errorMsg = document.getElementById('password-error');
+    
+    if (!telefonoVerificado) {
+        errorMsg.textContent = 'Primero verifica tu telefono';
+        return;
+    }
+    
     var password = document.getElementById('nueva-password').value.trim();
     var confirmPassword = document.getElementById('confirmar-password').value.trim();
-    var errorMsg = document.getElementById('password-error');
+    
     if (!password) { errorMsg.textContent = 'Introduce una contrasena'; return; }
     if (password.length < 4) { errorMsg.textContent = 'Minimo 4 caracteres'; return; }
-    if (password !== confirmPassword) { errorMsg.textContent = 'No coinciden'; return; }
+    if (password !== confirmPassword) { errorMsg.textContent = 'Las contrasenas no coinciden'; return; }
+    
     try {
         await supabase.from('clientes').update({ password: password }).eq('numero', clienteActual.numero);
         clienteActual.password = password;
+        localStorage.setItem('clienteNumero', clienteActual.numero);
         localStorage.setItem('clientePassword', password);
         cerrarPopupPassword();
-    } catch (err) { errorMsg.textContent = 'Error'; }
+        await cargarVentas();
+        mostrarDatosCliente();
+        showScreen(mainScreen);
+    } catch (err) { errorMsg.textContent = 'Error al guardar'; }
 }
 
 async function cargarDatosAdmin() {
@@ -277,7 +347,6 @@ function actualizarDashboard() {
     var hoy = getHoy(); var ayer = getAyer(); var inicioSemana = getInicioSemana();
     console.log('Fechas - Hoy:', hoy, 'Ayer:', ayer, 'Inicio Semana:', inicioSemana);
     
-    // HOY = ventas de hoy desde las 08:00
     var ventasHoy = todasLasVentas.filter(function(v) {
         if (v.fecha !== hoy) return false;
         if (!v.hora) return true;
@@ -285,7 +354,6 @@ function actualizarDashboard() {
         return h >= 8;
     });
     
-    // AYER = ventas de ayer desde 08:00 + ventas de hoy antes de las 05:00 (madrugada)
     var ventasAyer = todasLasVentas.filter(function(v) {
         if (v.fecha === ayer) {
             if (!v.hora) return true;
@@ -300,11 +368,9 @@ function actualizarDashboard() {
         return false;
     });
     
-    // SEMANA = desde lunes 08:00 (ventas de madrugada del lunes van a semana anterior)
     var ventasSemana = todasLasVentas.filter(function(v) {
         if (v.fecha < inicioSemana) return false;
         if (v.fecha > inicioSemana) return true;
-        // Si es el lunes, solo contar desde las 08:00
         if (v.fecha === inicioSemana) {
             if (!v.hora) return true;
             var h = parseInt(v.hora.split(':')[0]);
@@ -323,7 +389,6 @@ function actualizarDashboard() {
     document.getElementById('admin-ventas-semana').textContent = ventasSemana.length;
     document.getElementById('admin-total-semana').textContent = formatMoney(sumarPrecios(ventasSemana));
     
-    // TURNOS - Mañana: 10-18h, Tarde: 18h+
     var ventasManana = ventasHoy.filter(function(v) { if (!v.hora) return false; var h = parseInt(v.hora.split(':')[0]); return h >= 10 && h < 18; });
     var ventasTarde = ventasHoy.filter(function(v) { if (!v.hora) return false; var h = parseInt(v.hora.split(':')[0]); return h >= 18; });
     
@@ -332,7 +397,6 @@ function actualizarDashboard() {
     document.getElementById('turno-tarde-ventas').textContent = ventasTarde.length + ' ventas';
     document.getElementById('turno-tarde-total').textContent = formatMoney(sumarPrecios(ventasTarde));
     
-    // Top 5
     var clienteGastos = {};
     for (var i = 0; i < todasLasVentas.length; i++) { var v = todasLasVentas[i]; if (!clienteGastos[v.numero_cliente]) clienteGastos[v.numero_cliente] = 0; clienteGastos[v.numero_cliente] += parseFloat(v.precio) || 0; }
     var ranking = [];
