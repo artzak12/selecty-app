@@ -14,42 +14,34 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <!-- Pantalla de Login -->
     <div id="login-screen" class="screen active">
         <div class="login-container">
             <div class="logo-container">
                 <img src="logo.png" alt="SELECTYNA" class="logo-img">
                 <p class="tagline">Tu caja personal</p>
             </div>
-            
             <div class="login-box">
                 <h2>Accede a tu caja</h2>
-                
                 <div class="input-group">
                     <label>Número de caja</label>
                     <input type="number" id="input-numero" placeholder="Ej: 47" inputmode="numeric">
                 </div>
-                
                 <div class="input-group">
                     <label>Contraseña</label>
                     <input type="password" id="input-password" placeholder="Tu contraseña">
                 </div>
-                
                 <button id="btn-login" class="btn-primary">
                     <span>Entrar</span>
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M5 12h14M12 5l7 7-7 7"/>
                     </svg>
                 </button>
-                
                 <p id="login-error" class="error-msg"></p>
             </div>
-            
             <p class="footer-text">¿No tienes caja? Adquiérela en <a href="https://selecty.es" target="_blank">selecty.es</a></p>
         </div>
     </div>
 
-    <!-- Pantalla Principal -->
     <div id="main-screen" class="screen">
         <header>
             <div class="header-content">
@@ -66,9 +58,7 @@
                 </button>
             </div>
         </header>
-
         <main>
-            <!-- Tarjeta de Bono -->
             <div class="bono-card">
                 <div class="bono-header">
                     <span class="bono-label">Tu bono disponible</span>
@@ -86,8 +76,6 @@
                     </div>
                 </div>
             </div>
-
-            <!-- Stats rápidas -->
             <div class="stats-grid">
                 <div class="stat-card">
                     <div class="stat-icon">📦</div>
@@ -105,14 +93,10 @@
                     <div class="stat-label">Última compra</div>
                 </div>
             </div>
-
-            <!-- Tabs -->
             <div class="tabs">
                 <button class="tab active" data-tab="en-caja">📦 En mi caja</button>
                 <button class="tab" data-tab="historial">📜 Historial</button>
             </div>
-
-            <!-- Contenido Tabs -->
             <div class="tab-content">
                 <div id="tab-en-caja" class="tab-panel active">
                     <div id="lista-en-caja" class="items-list"></div>
@@ -132,10 +116,31 @@
                 </div>
             </div>
         </main>
-
         <div class="status-bar" id="status-envio">
             <span class="status-icon">📦</span>
             <span class="status-text">Estado de tu caja: <strong id="estado-caja">Pendiente</strong></span>
+        </div>
+    </div>
+
+    <div id="popup-password" class="popup-overlay">
+        <div class="popup-box">
+            <div class="popup-header">
+                <span class="popup-icon">🔐</span>
+                <h3>Crea tu contraseña</h3>
+            </div>
+            <p class="popup-desc">Para proteger tu cuenta, crea una contraseña que usarás para acceder.</p>
+            <div class="input-group">
+                <label>Nueva contraseña</label>
+                <input type="password" id="nueva-password" placeholder="Mínimo 4 caracteres">
+            </div>
+            <div class="input-group">
+                <label>Confirmar contraseña</label>
+                <input type="password" id="confirmar-password" placeholder="Repite la contraseña">
+            </div>
+            <p id="password-error" class="error-msg"></p>
+            <button onclick="guardarNuevaPassword()" class="btn-primary">
+                <span>Guardar contraseña</span>
+            </button>
         </div>
     </div>
 
@@ -151,4 +156,4 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="app.js"></script>
 </body>
-</html>
+</html
