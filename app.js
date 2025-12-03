@@ -7,7 +7,7 @@ const mainScreen = document.getElementById('main-screen');
 const loadingOverlay = document.getElementById('loading');
 
 const inputNumero = document.getElementById('input-numero');
-const inputTiktok = document.getElementById('input-tiktok');
+const inputPassword = document.getElementById('input-password');
 const btnLogin = document.getElementById('btn-login');
 const loginError = document.getElementById('login-error');
 const btnLogout = document.getElementById('btn-logout');
@@ -15,6 +15,8 @@ const btnLogout = document.getElementById('btn-logout');
 // ========== ESTADO ==========
 let clienteActual = null;
 let ventasCliente = [];
+let subscripcionCliente = null;
+let subscripcionVentas = null;
 
 // ========== HELPERS ==========
 function showLoading() {
@@ -56,10 +58,15 @@ function showScreen(screen) {
 // ========== LOGIN ==========
 async function login() {
     const numero = inputNumero.value.trim();
-    const tiktok = inputTiktok.value.trim().replace('@', '');
+    const password = inputPassword.value.trim();
     
-    if (!numero && !tiktok) {
-        loginError.textContent = 'Introduce tu número de caja o usuario TikTok';
+    if (!numero) {
+        loginError.textContent = 'Introduce tu número de caja';
+        return;
+    }
+    
+    if (!password) {
+        loginError.textContent = 'Introduce tu contraseña';
         return;
     }
     
@@ -67,47 +74,53 @@ async function login() {
     showLoading();
     
     try {
-        let query = supabase.from('clientes').select('*');
-        
-        if (numero) {
-            query = query.eq('numero', parseInt(numero));
-        } else {
-            query = query.ilike('tiktok', `%${tiktok}%`);
-        }
-        
-        // Usar maybeSingle en lugar de single para evitar errores
-        const { data, error } = await query.maybeSingle();
-        
-        console.log('Login response:', { data, error });
+        const { data, error } = await supabase
+            .from('clientes')
+            .select('*')
+            .eq('numero', parseInt(numero))
+            .maybeSingle();
         
         if (error) {
-            console.error('Supabase error:', error);
-            loginError.textContent = 'Error de conexión: ' + error.message;
+            loginError.textContent = 'Error de conexión';
             hideLoading();
             return;
         }
         
         if (!data) {
-            loginError.textContent = 'No se encontró ninguna caja con esos datos';
+            loginError.textContent = 'No se encontró ninguna caja con ese número';
             hideLoading();
             return;
         }
         
+        // Verificar contraseña
+        if (data.password && data.password !== password) {
+            loginError.textContent = 'Contraseña incorrecta';
+            hideLoading();
+            return;
+        }
+        
+        // Si no tiene contraseña, la primera que ponga será su contraseña
+        if (!data.password) {
+            await supabase
+                .from('clientes')
+                .update({ password: password })
+                .eq('numero', parseInt(numero));
+            data.password = password;
+        }
+        
         clienteActual = data;
         
-        // Guardar en localStorage
         localStorage.setItem('clienteNumero', data.numero);
+        localStorage.setItem('clientePassword', password);
         
-        // Cargar ventas
         await cargarVentas();
-        
-        // Mostrar pantalla principal
+        suscribirseACambios();
         mostrarDatosCliente();
         showScreen(mainScreen);
         
     } catch (err) {
         console.error('Error login:', err);
-        loginError.textContent = 'Error al conectar: ' + err.message;
+        loginError.textContent = 'Error al conectar';
     }
     
     hideLoading();
@@ -136,11 +149,9 @@ async function cargarVentas() {
 function mostrarDatosCliente() {
     if (!clienteActual) return;
     
-    // Header
     document.getElementById('header-numero').textContent = `#${clienteActual.numero}`;
     document.getElementById('header-nombre').textContent = clienteActual.nombre || 'Cliente';
     
-    // Bono
     const bonoTotal = parseFloat(clienteActual.bono_total) || 0;
     const bonoGastado = parseFloat(clienteActual.bono_gastado) || 0;
     const bonoDisponible = bonoTotal - bonoGastado;
@@ -149,7 +160,6 @@ function mostrarDatosCliente() {
     document.getElementById('bono-total').textContent = formatMoney(bonoTotal);
     document.getElementById('bono-gastado').textContent = formatMoney(bonoGastado);
     
-    // Stats
     const pendientes = ventasCliente.filter(v => !v.enviado);
     const totalCompras = ventasCliente.length;
     
@@ -162,10 +172,8 @@ function mostrarDatosCliente() {
         document.getElementById('stat-ultima-compra').textContent = formatDate(ventasCliente[0].fecha);
     }
     
-    // Estado caja
     document.getElementById('estado-caja').textContent = pendientes.length > 0 ? `${pendientes.length} pendientes` : 'Vacía';
     
-    // Listas
     renderizarListas();
 }
 
@@ -173,7 +181,6 @@ function renderizarListas() {
     const pendientes = ventasCliente.filter(v => !v.enviado);
     const enviados = ventasCliente.filter(v => v.enviado);
     
-    // En caja (pendientes)
     const listaEnCaja = document.getElementById('lista-en-caja');
     const emptyCaja = document.getElementById('empty-caja');
     
@@ -197,7 +204,6 @@ function renderizarListas() {
         `).join('');
     }
     
-    // Historial (enviados)
     const listaHistorial = document.getElementById('lista-historial');
     const emptyHistorial = document.getElementById('empty-historial');
     
@@ -224,11 +230,21 @@ function renderizarListas() {
 
 // ========== LOGOUT ==========
 function logout() {
+    if (subscripcionCliente) {
+        supabase.removeChannel(subscripcionCliente);
+        subscripcionCliente = null;
+    }
+    if (subscripcionVentas) {
+        supabase.removeChannel(subscripcionVentas);
+        subscripcionVentas = null;
+    }
+    
     clienteActual = null;
     ventasCliente = [];
     localStorage.removeItem('clienteNumero');
+    localStorage.removeItem('clientePassword');
     inputNumero.value = '';
-    inputTiktok.value = '';
+    inputPassword.value = '';
     showScreen(loginScreen);
 }
 
@@ -249,36 +265,52 @@ function initTabs() {
 // ========== AUTO-LOGIN ==========
 async function checkAutoLogin() {
     const savedNumero = localStorage.getItem('clienteNumero');
-    if (savedNumero) {
+    const savedPassword = localStorage.getItem('clientePassword');
+    if (savedNumero && savedPassword) {
         inputNumero.value = savedNumero;
+        inputPassword.value = savedPassword;
         await login();
     }
 }
 
-// ========== REFRESH AUTOMÁTICO ==========
-function startAutoRefresh() {
-    setInterval(async () => {
-        if (clienteActual) {
-            try {
-                const { data: clienteData } = await supabase
-                    .from('clientes')
-                    .select('*')
-                    .eq('numero', clienteActual.numero)
-                    .maybeSingle();
-                
-                if (clienteData) {
-                    clienteActual = clienteData;
-                }
-                await cargarVentas();
+// ========== TIEMPO REAL ==========
+function suscribirseACambios() {
+    if (!clienteActual) return;
+    
+    subscripcionCliente = supabase
+        .channel('cliente-changes')
+        .on('postgres_changes', {
+            event: '*',
+            schema: 'public',
+            table: 'clientes',
+            filter: `numero=eq.${clienteActual.numero}`
+        }, (payload) => {
+            console.log('Cliente actualizado:', payload);
+            if (payload.new) {
+                clienteActual = payload.new;
                 mostrarDatosCliente();
-            } catch (err) {
-                console.error('Error en auto-refresh:', err);
             }
-        }
-    }, 30000);
+        })
+        .subscribe();
+    
+    subscripcionVentas = supabase
+        .channel('ventas-changes')
+        .on('postgres_changes', {
+            event: '*',
+            schema: 'public',
+            table: 'ventas',
+            filter: `numero_cliente=eq.${clienteActual.numero}`
+        }, async (payload) => {
+            console.log('Venta actualizada:', payload);
+            await cargarVentas();
+            mostrarDatosCliente();
+        })
+        .subscribe();
+    
+    console.log('Suscrito a cambios en tiempo real');
 }
 
-// ========== SERVICE WORKER (PWA) ==========
+// ========== SERVICE WORKER ==========
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
         navigator.serviceWorker.register('sw.js')
@@ -292,18 +324,16 @@ btnLogin.addEventListener('click', login);
 btnLogout.addEventListener('click', logout);
 
 inputNumero.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') login();
+    if (e.key === 'Enter') inputPassword.focus();
 });
-inputTiktok.addEventListener('keypress', (e) => {
+inputPassword.addEventListener('keypress', (e) => {
     if (e.key === 'Enter') login();
 });
 
 inputNumero.addEventListener('input', () => {
-    inputTiktok.value = '';
     loginError.textContent = '';
 });
-inputTiktok.addEventListener('input', () => {
-    inputNumero.value = '';
+inputPassword.addEventListener('input', () => {
     loginError.textContent = '';
 });
 
@@ -311,5 +341,4 @@ inputTiktok.addEventListener('input', () => {
 document.addEventListener('DOMContentLoaded', () => {
     initTabs();
     checkAutoLogin();
-    startAutoRefresh();
 });
