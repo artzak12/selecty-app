@@ -18,7 +18,7 @@
     <div id="login-screen" class="screen active">
         <div class="login-container">
             <div class="logo-container">
-                <div class="logo">SELECTY</div>
+                <img src="logo.png" alt="SELECTYNA" class="logo-img">
                 <p class="tagline">Tu caja personal</p>
             </div>
             
@@ -30,13 +30,9 @@
                     <input type="number" id="input-numero" placeholder="Ej: 47" inputmode="numeric">
                 </div>
                 
-                <div class="separator">
-                    <span>o</span>
-                </div>
-                
                 <div class="input-group">
-                    <label>Usuario TikTok</label>
-                    <input type="text" id="input-tiktok" placeholder="Ej: @tu_usuario">
+                    <label>Contraseña</label>
+                    <input type="password" id="input-password" placeholder="Tu contraseña">
                 </div>
                 
                 <button id="btn-login" class="btn-primary">
@@ -118,23 +114,16 @@
 
             <!-- Contenido Tabs -->
             <div class="tab-content">
-                <!-- Tab: En mi caja -->
                 <div id="tab-en-caja" class="tab-panel active">
-                    <div id="lista-en-caja" class="items-list">
-                        <!-- Items dinámicos -->
-                    </div>
+                    <div id="lista-en-caja" class="items-list"></div>
                     <div id="empty-caja" class="empty-state">
                         <div class="empty-icon">📭</div>
                         <p>Tu caja está vacía</p>
                         <span>¡Participa en los LIVES para conseguir artículos!</span>
                     </div>
                 </div>
-
-                <!-- Tab: Historial -->
                 <div id="tab-historial" class="tab-panel">
-                    <div id="lista-historial" class="items-list">
-                        <!-- Items dinámicos -->
-                    </div>
+                    <div id="lista-historial" class="items-list"></div>
                     <div id="empty-historial" class="empty-state">
                         <div class="empty-icon">📋</div>
                         <p>Sin historial</p>
@@ -144,20 +133,17 @@
             </div>
         </main>
 
-        <!-- Footer con estado envío -->
         <div class="status-bar" id="status-envio">
             <span class="status-icon">📦</span>
             <span class="status-text">Estado de tu caja: <strong id="estado-caja">Pendiente</strong></span>
         </div>
     </div>
 
-    <!-- Loading Overlay -->
     <div id="loading" class="loading-overlay">
         <div class="spinner"></div>
         <p>Cargando...</p>
     </div>
 
-    <!-- Config Supabase -->
     <script>
         const SUPABASE_URL = 'https://vfvmatcgzqrugpdyljsp.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZmdm1hdGNnenFydWdwZHlsanNwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ2ODc1NjMsImV4cCI6MjA4MDI2MzU2M30.C19crt_vFGL3jx_6I6zCo4qRPYBksUH4M5GE7eJ3A3Q';
@@ -166,6 +152,3 @@
     <script src="app.js"></script>
 </body>
 </html>
-
-
-
