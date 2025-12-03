@@ -300,7 +300,18 @@ function actualizarDashboard() {
         return false;
     });
     
-    var ventasSemana = todasLasVentas.filter(function(v) { return v.fecha >= inicioSemana; });
+    // SEMANA = desde lunes 08:00 (ventas de madrugada del lunes van a semana anterior)
+    var ventasSemana = todasLasVentas.filter(function(v) {
+        if (v.fecha < inicioSemana) return false;
+        if (v.fecha > inicioSemana) return true;
+        // Si es el lunes, solo contar desde las 08:00
+        if (v.fecha === inicioSemana) {
+            if (!v.hora) return true;
+            var h = parseInt(v.hora.split(':')[0]);
+            return h >= 8;
+        }
+        return true;
+    });
     
     console.log('Ventas HOY:', ventasHoy.length, '- Total:', sumarPrecios(ventasHoy).toFixed(2));
     console.log('Ventas SEMANA:', ventasSemana.length, '- Total:', sumarPrecios(ventasSemana).toFixed(2));
