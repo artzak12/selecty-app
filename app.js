@@ -292,7 +292,7 @@ function actualizarDashboard() {
     document.getElementById('admin-total-semana').textContent = formatMoney(sumarPrecios(ventasSemana));
     
     var ventasManana = ventasHoy.filter(function(v) { if (!v.hora) return false; var h = parseInt(v.hora.split(':')[0]); return h >= 10 && h < 18; });
-    var ventasTarde = ventasHoy.filter(function(v) { if (!v.hora) return false; var h = parseInt(v.hora.split(':')[0]); return h >= 18 || h < 6; });
+    var ventasTarde = ventasHoy.filter(function(v) { if (!v.hora) return false; var h = parseInt(v.hora.split(':')[0]); return h >= 18; });
     
     document.getElementById('turno-manana-ventas').textContent = ventasManana.length + ' ventas';
     document.getElementById('turno-manana-total').textContent = formatMoney(sumarPrecios(ventasManana));
