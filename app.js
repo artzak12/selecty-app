@@ -19,13 +19,8 @@ let subscripcionCliente = null;
 let subscripcionVentas = null;
 
 // ========== HELPERS ==========
-function showLoading() {
-    loadingOverlay.classList.add('active');
-}
-
-function hideLoading() {
-    loadingOverlay.classList.remove('active');
-}
+function showLoading() { loadingOverlay.classList.add('active'); }
+function hideLoading() { loadingOverlay.classList.remove('active'); }
 
 function formatMoney(amount) {
     const num = parseFloat(amount) || 0;
@@ -35,18 +30,13 @@ function formatMoney(amount) {
 function formatDate(dateStr) {
     if (!dateStr) return '--';
     const date = new Date(dateStr);
-    const day = date.getDate().toString().padStart(2, '0');
-    const month = (date.getMonth() + 1).toString().padStart(2, '0');
-    return `${day}/${month}`;
+    return `${date.getDate().toString().padStart(2,'0')}/${(date.getMonth()+1).toString().padStart(2,'0')}`;
 }
 
 function formatDateFull(dateStr) {
     if (!dateStr) return '--';
     const date = new Date(dateStr);
-    const day = date.getDate().toString().padStart(2, '0');
-    const month = (date.getMonth() + 1).toString().padStart(2, '0');
-    const year = date.getFullYear();
-    return `${day}/${month}/${year}`;
+    return `${date.getDate().toString().padStart(2,'0')}/${(date.getMonth()+1).toString().padStart(2,'0')}/${date.getFullYear()}`;
 }
 
 function showScreen(screen) {
@@ -62,11 +52,6 @@ async function login() {
     
     if (!numero) {
         loginError.textContent = 'Introduce tu número de caja';
-        return;
-    }
-    
-    if (!password) {
-        loginError.textContent = 'Introduce tu contraseña';
         return;
     }
     
@@ -92,57 +77,53 @@ async function login() {
             return;
         }
         
-        // Verificar contraseña
-        if (data.password && data.password !== password) {
-            loginError.textContent = 'Contraseña incorrecta';
-            hideLoading();
-            return;
-        }
-        
-        // Si no tiene contraseña, la primera que ponga será su contraseña
-        if (!data.password) {
-            await supabase
-                .from('clientes')
-                .update({ password: password })
-                .eq('numero', parseInt(numero));
-            data.password = password;
+        // Si tiene contraseña, verificarla
+        if (data.password) {
+            if (!password) {
+                loginError.textContent = 'Introduce tu contraseña';
+                hideLoading();
+                return;
+            }
+            if (data.password !== password) {
+                loginError.textContent = 'Contraseña incorrecta';
+                hideLoading();
+                return;
+            }
         }
         
         clienteActual = data;
-        
         localStorage.setItem('clienteNumero', data.numero);
-        localStorage.setItem('clientePassword', password);
+        if (data.password) {
+            localStorage.setItem('clientePassword', password);
+        }
         
         await cargarVentas();
         suscribirseACambios();
         mostrarDatosCliente();
         showScreen(mainScreen);
         
+        // Si no tiene contraseña, mostrar popup para crearla
+        if (!data.password) {
+            setTimeout(() => mostrarPopupCrearPassword(), 500);
+        }
+        
     } catch (err) {
-        console.error('Error login:', err);
         loginError.textContent = 'Error al conectar';
     }
-    
     hideLoading();
 }
 
 // ========== CARGAR VENTAS ==========
 async function cargarVentas() {
     if (!clienteActual) return;
-    
     try {
         const { data, error } = await supabase
             .from('ventas')
             .select('*')
             .eq('numero_cliente', clienteActual.numero)
             .order('fecha', { ascending: false });
-        
-        if (!error && data) {
-            ventasCliente = data;
-        }
-    } catch (err) {
-        console.error('Error cargando ventas:', err);
-    }
+        if (!error && data) ventasCliente = data;
+    } catch (err) { console.error('Error cargando ventas:', err); }
 }
 
 // ========== MOSTRAR DATOS ==========
@@ -161,10 +142,8 @@ function mostrarDatosCliente() {
     document.getElementById('bono-gastado').textContent = formatMoney(bonoGastado);
     
     const pendientes = ventasCliente.filter(v => !v.enviado);
-    const totalCompras = ventasCliente.length;
-    
     document.getElementById('stat-en-caja').textContent = pendientes.length;
-    document.getElementById('stat-total-compras').textContent = totalCompras;
+    document.getElementById('stat-total-compras').textContent = ventasCliente.length;
     
     if (clienteActual.ultima_compra) {
         document.getElementById('stat-ultima-compra').textContent = formatDate(clienteActual.ultima_compra);
@@ -173,7 +152,6 @@ function mostrarDatosCliente() {
     }
     
     document.getElementById('estado-caja').textContent = pendientes.length > 0 ? `${pendientes.length} pendientes` : 'Vacía';
-    
     renderizarListas();
 }
 
@@ -190,14 +168,14 @@ function renderizarListas() {
     } else {
         listaEnCaja.style.display = 'flex';
         emptyCaja.style.display = 'none';
-        listaEnCaja.innerHTML = pendientes.map(venta => `
+        listaEnCaja.innerHTML = pendientes.map(v => `
             <div class="item-card">
                 <div class="item-info">
-                    <div class="item-name">${venta.descripcion || 'Artículo'}</div>
-                    <div class="item-date">${formatDateFull(venta.fecha)}</div>
+                    <div class="item-name">${v.descripcion || 'Artículo'}</div>
+                    <div class="item-date">${formatDateFull(v.fecha)}</div>
                 </div>
                 <div class="item-status">
-                    <span class="item-price">${formatMoney(venta.precio)}</span>
+                    <span class="item-price">${formatMoney(v.precio)}</span>
                     <span class="status-badge pendiente">Pendiente</span>
                 </div>
             </div>
@@ -213,14 +191,14 @@ function renderizarListas() {
     } else {
         listaHistorial.style.display = 'flex';
         emptyHistorial.style.display = 'none';
-        listaHistorial.innerHTML = enviados.map(venta => `
+        listaHistorial.innerHTML = enviados.map(v => `
             <div class="item-card">
                 <div class="item-info">
-                    <div class="item-name">${venta.descripcion || 'Artículo'}</div>
-                    <div class="item-date">${formatDateFull(venta.fecha)}</div>
+                    <div class="item-name">${v.descripcion || 'Artículo'}</div>
+                    <div class="item-date">${formatDateFull(v.fecha)}</div>
                 </div>
                 <div class="item-status">
-                    <span class="item-price">${formatMoney(venta.precio)}</span>
+                    <span class="item-price">${formatMoney(v.precio)}</span>
                     <span class="status-badge enviado">Enviado ✓</span>
                 </div>
             </div>
@@ -230,15 +208,8 @@ function renderizarListas() {
 
 // ========== LOGOUT ==========
 function logout() {
-    if (subscripcionCliente) {
-        supabase.removeChannel(subscripcionCliente);
-        subscripcionCliente = null;
-    }
-    if (subscripcionVentas) {
-        supabase.removeChannel(subscripcionVentas);
-        subscripcionVentas = null;
-    }
-    
+    if (subscripcionCliente) { supabase.removeChannel(subscripcionCliente); subscripcionCliente = null; }
+    if (subscripcionVentas) { supabase.removeChannel(subscripcionVentas); subscripcionVentas = null; }
     clienteActual = null;
     ventasCliente = [];
     localStorage.removeItem('clienteNumero');
@@ -250,11 +221,10 @@ function logout() {
 
 // ========== TABS ==========
 function initTabs() {
-    const tabs = document.querySelectorAll('.tab');
-    tabs.forEach(tab => {
+    document.querySelectorAll('.tab').forEach(tab => {
         tab.addEventListener('click', () => {
             const tabId = tab.dataset.tab;
-            tabs.forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
             tab.classList.add('active');
             document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
             document.getElementById(`tab-${tabId}`).classList.add('active');
@@ -266,10 +236,48 @@ function initTabs() {
 async function checkAutoLogin() {
     const savedNumero = localStorage.getItem('clienteNumero');
     const savedPassword = localStorage.getItem('clientePassword');
-    if (savedNumero && savedPassword) {
+    if (savedNumero) {
         inputNumero.value = savedNumero;
-        inputPassword.value = savedPassword;
+        if (savedPassword) inputPassword.value = savedPassword;
         await login();
+    }
+}
+
+// ========== POPUP CREAR CONTRASEÑA ==========
+function mostrarPopupCrearPassword() {
+    const popup = document.getElementById('popup-password');
+    if (popup) popup.classList.add('active');
+}
+
+function cerrarPopupPassword() {
+    const popup = document.getElementById('popup-password');
+    if (popup) popup.classList.remove('active');
+}
+
+async function guardarNuevaPassword() {
+    const password = document.getElementById('nueva-password').value.trim();
+    const confirmPassword = document.getElementById('confirmar-password').value.trim();
+    const errorMsg = document.getElementById('password-error');
+    
+    if (!password) { errorMsg.textContent = 'Introduce una contraseña'; return; }
+    if (password.length < 4) { errorMsg.textContent = 'Mínimo 4 caracteres'; return; }
+    if (password !== confirmPassword) { errorMsg.textContent = 'Las contraseñas no coinciden'; return; }
+    
+    errorMsg.textContent = '';
+    
+    try {
+        const { error } = await supabase
+            .from('clientes')
+            .update({ password: password })
+            .eq('numero', clienteActual.numero);
+        
+        if (error) { errorMsg.textContent = 'Error al guardar'; return; }
+        
+        clienteActual.password = password;
+        localStorage.setItem('clientePassword', password);
+        cerrarPopupPassword();
+    } catch (err) {
+        errorMsg.textContent = 'Error de conexión';
     }
 }
 
@@ -279,66 +287,9 @@ function suscribirseACambios() {
     
     subscripcionCliente = supabase
         .channel('cliente-changes')
-        .on('postgres_changes', {
-            event: '*',
-            schema: 'public',
-            table: 'clientes',
-            filter: `numero=eq.${clienteActual.numero}`
-        }, (payload) => {
-            console.log('Cliente actualizado:', payload);
-            if (payload.new) {
-                clienteActual = payload.new;
-                mostrarDatosCliente();
-            }
-        })
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'clientes', filter: `numero=eq.${clienteActual.numero}` },
+            (payload) => { if (payload.new) { clienteActual = payload.new; mostrarDatosCliente(); } })
         .subscribe();
     
     subscripcionVentas = supabase
-        .channel('ventas-changes')
-        .on('postgres_changes', {
-            event: '*',
-            schema: 'public',
-            table: 'ventas',
-            filter: `numero_cliente=eq.${clienteActual.numero}`
-        }, async (payload) => {
-            console.log('Venta actualizada:', payload);
-            await cargarVentas();
-            mostrarDatosCliente();
-        })
-        .subscribe();
-    
-    console.log('Suscrito a cambios en tiempo real');
-}
-
-// ========== SERVICE WORKER ==========
-if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-        navigator.serviceWorker.register('sw.js')
-            .then(reg => console.log('SW registrado'))
-            .catch(err => console.log('SW error:', err));
-    });
-}
-
-// ========== EVENTOS ==========
-btnLogin.addEventListener('click', login);
-btnLogout.addEventListener('click', logout);
-
-inputNumero.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') inputPassword.focus();
-});
-inputPassword.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') login();
-});
-
-inputNumero.addEventListener('input', () => {
-    loginError.textContent = '';
-});
-inputPassword.addEventListener('input', () => {
-    loginError.textContent = '';
-});
-
-// ========== INIT ==========
-document.addEventListener('DOMContentLoaded', () => {
-    initTabs();
-    checkAutoLogin();
-});
+        .channel('ventas-changes
