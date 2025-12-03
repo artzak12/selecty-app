@@ -75,9 +75,19 @@ async function login() {
             query = query.ilike('tiktok', `%${tiktok}%`);
         }
         
-        const { data, error } = await query.single();
+        // Usar maybeSingle en lugar de single para evitar errores
+        const { data, error } = await query.maybeSingle();
         
-        if (error || !data) {
+        console.log('Login response:', { data, error });
+        
+        if (error) {
+            console.error('Supabase error:', error);
+            loginError.textContent = 'Error de conexión: ' + error.message;
+            hideLoading();
+            return;
+        }
+        
+        if (!data) {
             loginError.textContent = 'No se encontró ninguna caja con esos datos';
             hideLoading();
             return;
@@ -97,7 +107,7 @@ async function login() {
         
     } catch (err) {
         console.error('Error login:', err);
-        loginError.textContent = 'Error al conectar. Inténtalo de nuevo.';
+        loginError.textContent = 'Error al conectar: ' + err.message;
     }
     
     hideLoading();
@@ -153,7 +163,6 @@ function mostrarDatosCliente() {
     }
     
     // Estado caja
-    const estadoCaja = clienteActual.caja_vacia ? 'Vacía' : 'Con artículos';
     document.getElementById('estado-caja').textContent = pendientes.length > 0 ? `${pendientes.length} pendientes` : 'Vacía';
     
     // Listas
@@ -229,12 +238,8 @@ function initTabs() {
     tabs.forEach(tab => {
         tab.addEventListener('click', () => {
             const tabId = tab.dataset.tab;
-            
-            // Activar tab
             tabs.forEach(t => t.classList.remove('active'));
             tab.classList.add('active');
-            
-            // Mostrar panel
             document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
             document.getElementById(`tab-${tabId}`).classList.add('active');
         });
@@ -252,25 +257,19 @@ async function checkAutoLogin() {
 
 // ========== REFRESH AUTOMÁTICO ==========
 function startAutoRefresh() {
-    // Refrescar datos cada 30 segundos
     setInterval(async () => {
         if (clienteActual) {
             try {
-                // Recargar cliente
                 const { data: clienteData } = await supabase
                     .from('clientes')
                     .select('*')
                     .eq('numero', clienteActual.numero)
-                    .single();
+                    .maybeSingle();
                 
                 if (clienteData) {
                     clienteActual = clienteData;
                 }
-                
-                // Recargar ventas
                 await cargarVentas();
-                
-                // Actualizar UI
                 mostrarDatosCliente();
             } catch (err) {
                 console.error('Error en auto-refresh:', err);
@@ -292,7 +291,6 @@ if ('serviceWorker' in navigator) {
 btnLogin.addEventListener('click', login);
 btnLogout.addEventListener('click', logout);
 
-// Enter para login
 inputNumero.addEventListener('keypress', (e) => {
     if (e.key === 'Enter') login();
 });
@@ -300,7 +298,6 @@ inputTiktok.addEventListener('keypress', (e) => {
     if (e.key === 'Enter') login();
 });
 
-// Limpiar el otro campo al escribir
 inputNumero.addEventListener('input', () => {
     inputTiktok.value = '';
     loginError.textContent = '';
@@ -316,6 +313,3 @@ document.addEventListener('DOMContentLoaded', () => {
     checkAutoLogin();
     startAutoRefresh();
 });
-
-
-
