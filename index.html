@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#FFD700">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>SELECTY - Mi Caja</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" href="icon-192.png">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Pantalla de Login -->
+    <div id="login-screen" class="screen active">
+        <div class="login-container">
+            <div class="logo-container">
+                <div class="logo">SELECTY</div>
+                <p class="tagline">Tu caja personal</p>
+            </div>
+            
+            <div class="login-box">
+                <h2>Accede a tu caja</h2>
+                
+                <div class="input-group">
+                    <label>Número de caja</label>
+                    <input type="number" id="input-numero" placeholder="Ej: 47" inputmode="numeric">
+                </div>
+                
+                <div class="separator">
+                    <span>o</span>
+                </div>
+                
+                <div class="input-group">
+                    <label>Usuario TikTok</label>
+                    <input type="text" id="input-tiktok" placeholder="Ej: @tu_usuario">
+                </div>
+                
+                <button id="btn-login" class="btn-primary">
+                    <span>Entrar</span>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M5 12h14M12 5l7 7-7 7"/>
+                    </svg>
+                </button>
+                
+                <p id="login-error" class="error-msg"></p>
+            </div>
+            
+            <p class="footer-text">¿No tienes caja? Adquiérela en <a href="https://selecty.es" target="_blank">selecty.es</a></p>
+        </div>
+    </div>
+
+    <!-- Pantalla Principal -->
+    <div id="main-screen" class="screen">
+        <header>
+            <div class="header-content">
+                <div class="user-info">
+                    <span class="user-number" id="header-numero">#47</span>
+                    <span class="user-name" id="header-nombre">María</span>
+                </div>
+                <button id="btn-logout" class="btn-icon" title="Cerrar sesión">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                        <polyline points="16 17 21 12 16 7"/>
+                        <line x1="21" y1="12" x2="9" y2="12"/>
+                    </svg>
+                </button>
+            </div>
+        </header>
+
+        <main>
+            <!-- Tarjeta de Bono -->
+            <div class="bono-card">
+                <div class="bono-header">
+                    <span class="bono-label">Tu bono disponible</span>
+                    <span class="bono-icon">💰</span>
+                </div>
+                <div class="bono-amount" id="bono-disponible">0,00€</div>
+                <div class="bono-details">
+                    <div class="bono-detail">
+                        <span class="detail-label">Total cargado</span>
+                        <span class="detail-value" id="bono-total">0,00€</span>
+                    </div>
+                    <div class="bono-detail">
+                        <span class="detail-label">Gastado</span>
+                        <span class="detail-value" id="bono-gastado">0,00€</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stats rápidas -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon">📦</div>
+                    <div class="stat-value" id="stat-en-caja">0</div>
+                    <div class="stat-label">En tu caja</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">🛒</div>
+                    <div class="stat-value" id="stat-total-compras">0</div>
+                    <div class="stat-label">Compras</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">📅</div>
+                    <div class="stat-value" id="stat-ultima-compra">--</div>
+                    <div class="stat-label">Última compra</div>
+                </div>
+            </div>
+
+            <!-- Tabs -->
+            <div class="tabs">
+                <button class="tab active" data-tab="en-caja">📦 En mi caja</button>
+                <button class="tab" data-tab="historial">📜 Historial</button>
+            </div>
+
+            <!-- Contenido Tabs -->
+            <div class="tab-content">
+                <!-- Tab: En mi caja -->
+                <div id="tab-en-caja" class="tab-panel active">
+                    <div id="lista-en-caja" class="items-list">
+                        <!-- Items dinámicos -->
+                    </div>
+                    <div id="empty-caja" class="empty-state">
+                        <div class="empty-icon">📭</div>
+                        <p>Tu caja está vacía</p>
+                        <span>¡Participa en los LIVES para conseguir artículos!</span>
+                    </div>
+                </div>
+
+                <!-- Tab: Historial -->
+                <div id="tab-historial" class="tab-panel">
+                    <div id="lista-historial" class="items-list">
+                        <!-- Items dinámicos -->
+                    </div>
+                    <div id="empty-historial" class="empty-state">
+                        <div class="empty-icon">📋</div>
+                        <p>Sin historial</p>
+                        <span>Aquí aparecerán tus compras anteriores</span>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Footer con estado envío -->
+        <div class="status-bar" id="status-envio">
+            <span class="status-icon">📦</span>
+            <span class="status-text">Estado de tu caja: <strong id="estado-caja">Pendiente</strong></span>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loading" class="loading-overlay">
+        <div class="spinner"></div>
+        <p>Cargando...</p>
+    </div>
+
+    <!-- Config Supabase -->
+    <script>
+        const SUPABASE_URL = 'https://vfvmatcgzqrugpdyljsp.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZmdm1hdGNnenFydWdwZHlsanNwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ2ODc1NjMsImV4cCI6MjA4MDI2MzU2M30.C19crt_vFGL3jx_6I6zCo4qRPYBksUH4M5GE7eJ3A3Q';
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="app.js"></script>
+</body>
+</html>
+
+
+
