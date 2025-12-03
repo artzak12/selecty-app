@@ -4,6 +4,7 @@ const loginScreen = document.getElementById('login-screen');
 const mainScreen = document.getElementById('main-screen');
 const adminScreen = document.getElementById('admin-screen');
 const loadingOverlay = document.getElementById('loading');
+
 const inputNumero = document.getElementById('input-numero');
 const inputPassword = document.getElementById('input-password');
 const btnLogin = document.getElementById('btn-login');
@@ -50,7 +51,8 @@ function getHoy() {
 }
 
 function getAyer() {
-    var d = new Date(); d.setDate(d.getDate() - 1);
+    var d = new Date();
+    d.setDate(d.getDate() - 1);
     return d.getFullYear() + '-' + (d.getMonth()+1).toString().padStart(2,'0') + '-' + d.getDate().toString().padStart(2,'0');
 }
 
@@ -67,11 +69,16 @@ function getInicioMes() {
     return d.getFullYear() + '-' + (d.getMonth()+1).toString().padStart(2,'0') + '-01';
 }
 
+async function recargarDatosAdmin() {
+    await cargarDatosAdmin();
+    alert('Datos recargados - Total ventas: ' + todasLasVentas.length);
+}
+
 async function login() {
     var numero = inputNumero.value.trim();
     var password = inputPassword.value.trim();
     
-    if (!numero) { loginError.textContent = 'Introduce tu numero de caja o Admin'; return; }
+    if (!numero) { loginError.textContent = 'Introduce tu numero de caja'; return; }
     
     loginError.textContent = '';
     showLoading();
@@ -216,6 +223,7 @@ function initAdminTabs() {
     for (var i = 0; i < tabs.length; i++) {
         tabs[i].onclick = function() {
             var tabId = this.getAttribute('data-admin-tab');
+            if (!tabId) return;
             document.querySelectorAll('.admin-tab').forEach(function(t) { t.classList.remove('active'); });
             this.classList.add('active');
             document.querySelectorAll('.admin-panel').forEach(function(p) { p.classList.remove('active'); });
@@ -266,6 +274,7 @@ async function cargarDatosAdmin() {
     try {
         var resp1 = await supabase.from('ventas').select('*').order('fecha', { ascending: false });
         todasLasVentas = resp1.data || [];
+        console.log('Total ventas cargadas:', todasLasVentas.length);
         
         var resp2 = await supabase.from('clientes').select('*').order('numero', { ascending: true });
         todosLosClientes = resp2.data || [];
@@ -273,7 +282,7 @@ async function cargarDatosAdmin() {
         actualizarDashboard();
         mostrarListaClientes();
         mostrarListaVentas();
-    } catch (err) {}
+    } catch (err) { console.error('Error:', err); }
     hideLoading();
 }
 
@@ -284,12 +293,19 @@ function sumarPrecios(arr) {
 }
 
 function actualizarDashboard() {
-    var hoy = getHoy(), ayer = getAyer(), inicioSemana = getInicioSemana(), inicioMes = getInicioMes();
+    var hoy = getHoy();
+    var ayer = getAyer();
+    var inicioSemana = getInicioSemana();
+    var inicioMes = getInicioMes();
+    
+    console.log('Fechas - Hoy:', hoy, 'Semana desde:', inicioSemana);
     
     var ventasHoy = todasLasVentas.filter(function(v) { return v.fecha === hoy; });
     var ventasAyer = todasLasVentas.filter(function(v) { return v.fecha === ayer; });
     var ventasSemana = todasLasVentas.filter(function(v) { return v.fecha >= inicioSemana; });
     var ventasMes = todasLasVentas.filter(function(v) { return v.fecha >= inicioMes; });
+    
+    console.log('Ventas semana:', ventasSemana.length, '- Total:', sumarPrecios(ventasSemana).toFixed(2));
     
     document.getElementById('admin-ventas-hoy').textContent = ventasHoy.length;
     document.getElementById('admin-total-hoy').textContent = formatMoney(sumarPrecios(ventasHoy));
@@ -382,7 +398,7 @@ async function guardarCambiosCliente() {
 }
 
 function mostrarListaVentas() {
-    var ventas = todasLasVentas;
+    var ventas = todasLasVentas.slice();
     var filtroFecha = document.getElementById('filtro-fecha').value;
     
     if (filtroFecha === 'hoy') ventas = ventas.filter(function(v) { return v.fecha === getHoy(); });
