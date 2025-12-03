@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#FFD700">
-    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>SELECTY - Mi Caja</title>
     <link rel="manifest" href="manifest.json">
@@ -23,12 +23,12 @@
             <div class="login-box">
                 <h2>Accede a tu caja</h2>
                 <div class="input-group">
-                    <label>Número de caja</label>
-                    <input type="number" id="input-numero" placeholder="Ej: 47" inputmode="numeric">
+                    <label>Numero de caja o "Admin"</label>
+                    <input type="text" id="input-numero" placeholder="Ej: 47 o Admin">
                 </div>
                 <div class="input-group">
-                    <label>Contraseña</label>
-                    <input type="password" id="input-password" placeholder="Tu contraseña">
+                    <label>Contrasena</label>
+                    <input type="password" id="input-password" placeholder="Tu contrasena">
                 </div>
                 <button id="btn-login" class="btn-primary">
                     <span>Entrar</span>
@@ -38,7 +38,7 @@
                 </button>
                 <p id="login-error" class="error-msg"></p>
             </div>
-            <p class="footer-text">¿No tienes caja? Adquiérela en <a href="https://selecty.es" target="_blank">selecty.es</a></p>
+            <p class="footer-text">Adquiere tu caja en <a href="https://selecty.es" target="_blank">selecty.es</a></p>
         </div>
     </div>
 
@@ -47,9 +47,9 @@
             <div class="header-content">
                 <div class="user-info">
                     <span class="user-number" id="header-numero">#47</span>
-                    <span class="user-name" id="header-nombre">María</span>
+                    <span class="user-name" id="header-nombre">Cliente</span>
                 </div>
-                <button id="btn-logout" class="btn-icon" title="Cerrar sesión">
+                <button id="btn-logout" class="btn-icon" title="Cerrar sesion">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
                         <polyline points="16 17 21 12 16 7"/>
@@ -64,15 +64,15 @@
                     <span class="bono-label">Tu bono disponible</span>
                     <span class="bono-icon">💰</span>
                 </div>
-                <div class="bono-amount" id="bono-disponible">0,00€</div>
+                <div class="bono-amount" id="bono-disponible">0,00 EUR</div>
                 <div class="bono-details">
                     <div class="bono-detail">
                         <span class="detail-label">Total cargado</span>
-                        <span class="detail-value" id="bono-total">0,00€</span>
+                        <span class="detail-value" id="bono-total">0,00 EUR</span>
                     </div>
                     <div class="bono-detail">
                         <span class="detail-label">Gastado</span>
-                        <span class="detail-value" id="bono-gastado">0,00€</span>
+                        <span class="detail-value" id="bono-gastado">0,00 EUR</span>
                     </div>
                 </div>
             </div>
@@ -90,7 +90,7 @@
                 <div class="stat-card">
                     <div class="stat-icon">📅</div>
                     <div class="stat-value" id="stat-ultima-compra">--</div>
-                    <div class="stat-label">Última compra</div>
+                    <div class="stat-label">Ultima compra</div>
                 </div>
             </div>
             <div class="tabs">
@@ -102,8 +102,8 @@
                     <div id="lista-en-caja" class="items-list"></div>
                     <div id="empty-caja" class="empty-state">
                         <div class="empty-icon">📭</div>
-                        <p>Tu caja está vacía</p>
-                        <span>¡Participa en los LIVES para conseguir artículos!</span>
+                        <p>Tu caja esta vacia</p>
+                        <span>Participa en los LIVES</span>
                     </div>
                 </div>
                 <div id="tab-historial" class="tab-panel">
@@ -111,49 +111,93 @@
                     <div id="empty-historial" class="empty-state">
                         <div class="empty-icon">📋</div>
                         <p>Sin historial</p>
-                        <span>Aquí aparecerán tus compras anteriores</span>
                     </div>
                 </div>
             </div>
         </main>
-        <div class="status-bar" id="status-envio">
-            <span class="status-icon">📦</span>
-            <span class="status-text">Estado de tu caja: <strong id="estado-caja">Pendiente</strong></span>
-        </div>
+        <div class="status-bar"><span class="status-icon">📦</span><span class="status-text">Estado: <strong id="estado-caja">Pendiente</strong></span></div>
+    </div>
+
+    <div id="admin-screen" class="screen">
+        <header class="admin-header">
+            <div class="header-content">
+                <div class="user-info">
+                    <span class="admin-badge">👑 ADMIN</span>
+                    <span class="user-name">Panel de Control</span>
+                </div>
+                <button id="btn-admin-logout" class="btn-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></button>
+            </div>
+        </header>
+        <main class="admin-main">
+            <div class="admin-tabs">
+                <button class="admin-tab active" data-admin-tab="dashboard">📊 Dashboard</button>
+                <button class="admin-tab" data-admin-tab="clientes">👥 Clientes</button>
+                <button class="admin-tab" data-admin-tab="ventas">📋 Ventas</button>
+            </div>
+            <div id="admin-dashboard" class="admin-panel active">
+                <h2>📊 Resumen de Ventas</h2>
+                <div class="admin-stats-grid">
+                    <div class="admin-stat-card verde"><div class="admin-stat-label">Hoy</div><div class="admin-stat-value" id="admin-ventas-hoy">0</div><div class="admin-stat-extra" id="admin-total-hoy">0 EUR</div></div>
+                    <div class="admin-stat-card azul"><div class="admin-stat-label">Ayer</div><div class="admin-stat-value" id="admin-ventas-ayer">0</div><div class="admin-stat-extra" id="admin-total-ayer">0 EUR</div></div>
+                    <div class="admin-stat-card morado"><div class="admin-stat-label">Esta semana</div><div class="admin-stat-value" id="admin-ventas-semana">0</div><div class="admin-stat-extra" id="admin-total-semana">0 EUR</div></div>
+                    <div class="admin-stat-card naranja"><div class="admin-stat-label">Este mes</div><div class="admin-stat-value" id="admin-ventas-mes">0</div><div class="admin-stat-extra" id="admin-total-mes">0 EUR</div></div>
+                </div>
+                <h3>🌅 Por Turnos (Hoy)</h3>
+                <div class="turnos-grid">
+                    <div class="turno-card manana"><div class="turno-icon">🌅</div><div class="turno-nombre">Manana (8-16h)</div><div class="turno-ventas" id="turno-manana-ventas">0 ventas</div><div class="turno-total" id="turno-manana-total">0 EUR</div></div>
+                    <div class="turno-card tarde"><div class="turno-icon">🌆</div><div class="turno-nombre">Tarde (16-24h)</div><div class="turno-ventas" id="turno-tarde-ventas">0 ventas</div><div class="turno-total" id="turno-tarde-total">0 EUR</div></div>
+                </div>
+                <h3>🏆 Top 5 Clientes</h3>
+                <div id="top-clientes" class="top-clientes-list"></div>
+            </div>
+            <div id="admin-clientes" class="admin-panel">
+                <h2>👥 Gestionar Clientes</h2>
+                <div class="search-box"><input type="text" id="admin-buscar-cliente" placeholder="Buscar por numero o nombre..."><button id="btn-buscar-cliente" class="btn-small">🔍 Buscar</button></div>
+                <div id="cliente-resultado" class="cliente-card" style="display:none;">
+                    <div class="cliente-header"><span class="cliente-numero" id="edit-cliente-num">#0</span><span class="cliente-nombre" id="edit-cliente-nombre">Cliente</span></div>
+                    <div class="cliente-form">
+                        <div class="form-row"><label>Nombre:</label><input type="text" id="edit-nombre"></div>
+                        <div class="form-row"><label>Bono Total:</label><input type="number" id="edit-bono-total" step="0.01"></div>
+                        <div class="form-row"><label>Bono Gastado:</label><input type="number" id="edit-bono-gastado" step="0.01"></div>
+                        <div class="form-row"><label>Contrasena:</label><input type="text" id="edit-password"></div>
+                        <div class="form-buttons"><button id="btn-guardar-cliente" class="btn-primary">💾 Guardar</button></div>
+                    </div>
+                    <div id="edit-cliente-msg" class="msg"></div>
+                </div>
+                <h3>📋 Todos los Clientes</h3>
+                <div id="lista-todos-clientes" class="clientes-lista"></div>
+            </div>
+            <div id="admin-ventas" class="admin-panel">
+                <h2>📋 Historial de Ventas</h2>
+                <div class="filtros-ventas">
+                    <select id="filtro-fecha"><option value="hoy">Hoy</option><option value="ayer">Ayer</option><option value="semana">Semana</option><option value="mes">Mes</option><option value="todo">Todo</option></select>
+                    <input type="text" id="filtro-cliente" placeholder="Filtrar cliente...">
+                    <button id="btn-filtrar-ventas" class="btn-small">🔍</button>
+                </div>
+                <div id="ventas-lista" class="ventas-admin-lista"></div>
+            </div>
+        </main>
     </div>
 
     <div id="popup-password" class="popup-overlay">
         <div class="popup-box">
-            <div class="popup-header">
-                <span class="popup-icon">🔐</span>
-                <h3>Crea tu contraseña</h3>
-            </div>
-            <p class="popup-desc">Para proteger tu cuenta, crea una contraseña que usarás para acceder.</p>
-            <div class="input-group">
-                <label>Nueva contraseña</label>
-                <input type="password" id="nueva-password" placeholder="Mínimo 4 caracteres">
-            </div>
-            <div class="input-group">
-                <label>Confirmar contraseña</label>
-                <input type="password" id="confirmar-password" placeholder="Repite la contraseña">
-            </div>
+            <div class="popup-header"><span class="popup-icon">🔐</span><h3>Crea tu contrasena</h3></div>
+            <p class="popup-desc">Crea una contrasena para proteger tu cuenta.</p>
+            <div class="input-group"><label>Nueva contrasena</label><input type="password" id="nueva-password" placeholder="Minimo 4 caracteres"></div>
+            <div class="input-group"><label>Confirmar</label><input type="password" id="confirmar-password" placeholder="Repite"></div>
             <p id="password-error" class="error-msg"></p>
-            <button onclick="guardarNuevaPassword()" class="btn-primary">
-                <span>Guardar contraseña</span>
-            </button>
+            <button onclick="guardarNuevaPassword()" class="btn-primary"><span>Guardar</span></button>
         </div>
     </div>
 
-    <div id="loading" class="loading-overlay">
-        <div class="spinner"></div>
-        <p>Cargando...</p>
-    </div>
+    <div id="loading" class="loading-overlay"><div class="spinner"></div><p>Cargando...</p></div>
 
     <script>
         const SUPABASE_URL = 'https://vfvmatcgzqrugpdyljsp.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZmdm1hdGNnenFydWdwZHlsanNwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ2ODc1NjMsImV4cCI6MjA4MDI2MzU2M30.C19crt_vFGL3jx_6I6zCo4qRPYBksUH4M5GE7eJ3A3Q';
+        const ADMIN_PASSWORD = 'Aida0606';
     </script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="app.js"></script>
 </body>
-</html
+</html>
