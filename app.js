@@ -275,10 +275,31 @@ function sumarPrecios(arr) { var total = 0; for (var i = 0; i < arr.length; i++)
 
 function actualizarDashboard() {
     var hoy = getHoy(); var ayer = getAyer(); var inicioSemana = getInicioSemana();
-    console.log('Fechas - Hoy:', hoy, 'Inicio Semana:', inicioSemana);
+    console.log('Fechas - Hoy:', hoy, 'Ayer:', ayer, 'Inicio Semana:', inicioSemana);
     
-    var ventasHoy = todasLasVentas.filter(function(v) { return v.fecha === hoy; });
-    var ventasAyer = todasLasVentas.filter(function(v) { return v.fecha === ayer; });
+    // HOY = ventas de hoy desde las 08:00
+    var ventasHoy = todasLasVentas.filter(function(v) {
+        if (v.fecha !== hoy) return false;
+        if (!v.hora) return true;
+        var h = parseInt(v.hora.split(':')[0]);
+        return h >= 8;
+    });
+    
+    // AYER = ventas de ayer desde 08:00 + ventas de hoy antes de las 05:00 (madrugada)
+    var ventasAyer = todasLasVentas.filter(function(v) {
+        if (v.fecha === ayer) {
+            if (!v.hora) return true;
+            var h = parseInt(v.hora.split(':')[0]);
+            return h >= 8;
+        }
+        if (v.fecha === hoy) {
+            if (!v.hora) return false;
+            var h = parseInt(v.hora.split(':')[0]);
+            return h < 5;
+        }
+        return false;
+    });
+    
     var ventasSemana = todasLasVentas.filter(function(v) { return v.fecha >= inicioSemana; });
     
     console.log('Ventas HOY:', ventasHoy.length, '- Total:', sumarPrecios(ventasHoy).toFixed(2));
@@ -291,6 +312,7 @@ function actualizarDashboard() {
     document.getElementById('admin-ventas-semana').textContent = ventasSemana.length;
     document.getElementById('admin-total-semana').textContent = formatMoney(sumarPrecios(ventasSemana));
     
+    // TURNOS - Mañana: 10-18h, Tarde: 18h+
     var ventasManana = ventasHoy.filter(function(v) { if (!v.hora) return false; var h = parseInt(v.hora.split(':')[0]); return h >= 10 && h < 18; });
     var ventasTarde = ventasHoy.filter(function(v) { if (!v.hora) return false; var h = parseInt(v.hora.split(':')[0]); return h >= 18; });
     
@@ -299,6 +321,7 @@ function actualizarDashboard() {
     document.getElementById('turno-tarde-ventas').textContent = ventasTarde.length + ' ventas';
     document.getElementById('turno-tarde-total').textContent = formatMoney(sumarPrecios(ventasTarde));
     
+    // Top 5
     var clienteGastos = {};
     for (var i = 0; i < todasLasVentas.length; i++) { var v = todasLasVentas[i]; if (!clienteGastos[v.numero_cliente]) clienteGastos[v.numero_cliente] = 0; clienteGastos[v.numero_cliente] += parseFloat(v.precio) || 0; }
     var ranking = [];
