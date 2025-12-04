@@ -136,8 +136,14 @@ async function login() {
             return;
         }
         clienteActual = data;
-        localStorage.setItem('clienteNumero', data.numero);
-        localStorage.setItem('clientePassword', password);
+        var recordarme = document.getElementById('recordarme');
+        if (recordarme && recordarme.checked) {
+            localStorage.setItem('clienteNumero', data.numero);
+            localStorage.setItem('clientePassword', password);
+        } else {
+            localStorage.removeItem('clienteNumero');
+            localStorage.removeItem('clientePassword');
+        }
         await cargarVentas();
         mostrarDatosCliente();
         showScreen(mainScreen);
@@ -241,7 +247,13 @@ function initAdminTabs() {
 async function checkAutoLogin() {
     var savedNumero = localStorage.getItem('clienteNumero');
     var savedPassword = localStorage.getItem('clientePassword');
-    if (savedNumero) { inputNumero.value = savedNumero; if (savedPassword) inputPassword.value = savedPassword; await login(); }
+    var recordarme = document.getElementById('recordarme');
+    if (savedNumero) {
+        inputNumero.value = savedNumero;
+        if (savedPassword) inputPassword.value = savedPassword;
+        if (recordarme) recordarme.checked = true;
+        await login();
+    }
 }
 
 let telefonoVerificado = false;
@@ -307,8 +319,11 @@ async function guardarNuevaPassword() {
     try {
         await supabase.from('clientes').update({ password: password }).eq('numero', clienteActual.numero);
         clienteActual.password = password;
-        localStorage.setItem('clienteNumero', clienteActual.numero);
-        localStorage.setItem('clientePassword', password);
+        var recordarme = document.getElementById('recordarme');
+        if (recordarme && recordarme.checked) {
+            localStorage.setItem('clienteNumero', clienteActual.numero);
+            localStorage.setItem('clientePassword', password);
+        }
         cerrarPopupPassword();
         await cargarVentas();
         mostrarDatosCliente();
