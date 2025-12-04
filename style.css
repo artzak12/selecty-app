@@ -98,6 +98,10 @@ header { background: var(--bg-card); padding: 16px 20px; border-bottom: 1px soli
 .btn-icon { background: transparent; border: none; padding: 10px; border-radius: 12px; cursor: pointer; transition: background 0.2s; }
 .btn-icon:hover { background: rgba(255, 255, 255, 0.1); }
 .btn-icon svg { width: 22px; height: 22px; color: var(--text-secondary); }
+.btn-icon.rotating svg { animation: spin 1s linear infinite; }
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+#btn-recargar-cliente { margin-right: 5px; }
+#btn-recargar-cliente svg { color: var(--success); }
 
 main { padding: 20px; max-width: 600px; margin: 0 auto; }
 
@@ -156,7 +160,6 @@ main { padding: 20px; max-width: 600px; margin: 0 auto; }
 @keyframes spin { to { transform: rotate(360deg); } }
 .loading-overlay p { color: var(--text-secondary); font-size: 14px; }
 
-/* POPUP */
 .popup-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.95); display: none; align-items: center; justify-content: center; padding: 20px; z-index: 10000; }
 .popup-overlay.active { display: flex; }
 .popup-box { background: var(--bg-card); border-radius: var(--border-radius); padding: 32px 24px; max-width: 400px; width: 100%; border: 2px solid var(--primary); box-shadow: 0 0 40px rgba(255, 215, 0, 0.2); }
@@ -165,7 +168,6 @@ main { padding: 20px; max-width: 600px; margin: 0 auto; }
 .popup-header h3 { font-size: 22px; font-weight: 700; color: var(--primary); }
 .popup-desc { text-align: center; color: var(--text-secondary); font-size: 14px; margin-bottom: 24px; line-height: 1.5; }
 
-/* ========== ADMIN PANEL ========== */
 .admin-header { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); }
 .admin-badge { background: linear-gradient(135deg, #FFD700, #FFA500); color: #000; padding: 6px 14px; border-radius: 20px; font-weight: 700; font-size: 13px; }
 
