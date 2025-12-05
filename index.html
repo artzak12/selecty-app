@@ -14,6 +14,7 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <!-- Pantalla de Login -->
     <div id="login-screen" class="screen active">
         <div class="login-container">
             <div class="logo-container">
@@ -49,6 +50,7 @@
         </div>
     </div>
 
+    <!-- Pantalla Principal Cliente -->
     <div id="main-screen" class="screen">
         <header>
             <div class="header-content">
@@ -136,6 +138,7 @@
         </div>
     </div>
 
+    <!-- Panel Admin -->
     <div id="admin-screen" class="screen">
         <header class="admin-header">
             <div class="header-content">
@@ -152,15 +155,20 @@
                 </button>
             </div>
         </header>
+        
         <main class="admin-main">
+            <!-- Tabs Admin -->
             <div class="admin-tabs">
                 <button class="admin-tab active" data-admin-tab="dashboard">📊 Dashboard</button>
                 <button class="admin-tab" data-admin-tab="clientes">👥 Clientes</button>
                 <button class="admin-tab" data-admin-tab="ventas">📋 Ventas</button>
                 <button id="btn-recargar-admin" class="btn-recargar" onclick="recargarDatosAdmin()">🔄 Recargar</button>
             </div>
+
+            <!-- Dashboard -->
             <div id="admin-dashboard" class="admin-panel active">
                 <h2>📊 Resumen de Ventas</h2>
+                
                 <div class="admin-stats-grid tres-cols">
                     <div class="admin-stat-card verde">
                         <div class="admin-stat-label">Hoy</div>
@@ -178,6 +186,21 @@
                         <div class="admin-stat-extra" id="admin-total-semana">0 EUR</div>
                     </div>
                 </div>
+
+                <h3>💳 Bonos Cargados</h3>
+                <div class="admin-stats-grid dos-cols">
+                    <div class="admin-stat-card dorado">
+                        <div class="admin-stat-label">Hoy</div>
+                        <div class="admin-stat-value" id="admin-bonos-hoy">0</div>
+                        <div class="admin-stat-extra" id="admin-bonos-total-hoy">0 EUR</div>
+                    </div>
+                    <div class="admin-stat-card naranja">
+                        <div class="admin-stat-label">Ayer</div>
+                        <div class="admin-stat-value" id="admin-bonos-ayer">0</div>
+                        <div class="admin-stat-extra" id="admin-bonos-total-ayer">0 EUR</div>
+                    </div>
+                </div>
+
                 <h3>🌅 Por Turnos (Hoy)</h3>
                 <div class="turnos-grid">
                     <div class="turno-card manana">
@@ -193,15 +216,20 @@
                         <div class="turno-total" id="turno-tarde-total">0 EUR</div>
                     </div>
                 </div>
+
                 <h3>🏆 Top 5 Clientes</h3>
                 <div id="top-clientes" class="top-clientes-list"></div>
             </div>
+
+            <!-- Clientes -->
             <div id="admin-clientes" class="admin-panel">
                 <h2>👥 Gestionar Clientes</h2>
+                
                 <div class="search-box">
                     <input type="text" id="admin-buscar-cliente" placeholder="Buscar por numero o nombre...">
                     <button id="btn-buscar-cliente" class="btn-small">🔍 Buscar</button>
                 </div>
+
                 <div id="cliente-resultado" class="cliente-card" style="display:none;">
                     <div class="cliente-header">
                         <span class="cliente-numero" id="edit-cliente-num">#0</span>
@@ -230,11 +258,15 @@
                     </div>
                     <div id="edit-cliente-msg" class="msg"></div>
                 </div>
+
                 <h3>📋 Todos los Clientes</h3>
                 <div id="lista-todos-clientes" class="clientes-lista"></div>
             </div>
+
+            <!-- Ventas -->
             <div id="admin-ventas" class="admin-panel">
                 <h2>📋 Historial de Ventas</h2>
+                
                 <div class="filtros-ventas">
                     <select id="filtro-fecha">
                         <option value="hoy">Hoy</option>
@@ -246,11 +278,13 @@
                     <input type="text" id="filtro-cliente" placeholder="Filtrar por cliente...">
                     <button id="btn-filtrar-ventas" class="btn-small">🔍 Filtrar</button>
                 </div>
+
                 <div id="ventas-lista" class="ventas-admin-lista"></div>
             </div>
         </main>
     </div>
 
+    <!-- Popup Crear Contrasena -->
     <div id="popup-password" class="popup-overlay">
         <div class="popup-box">
             <div class="popup-header">
@@ -285,11 +319,13 @@
         </div>
     </div>
 
+    <!-- Loading Overlay -->
     <div id="loading" class="loading-overlay">
         <div class="spinner"></div>
         <p>Cargando...</p>
     </div>
 
+    <!-- Config Supabase -->
     <script>
         const SUPABASE_URL = 'https://vfvmatcgzqrugpdyljsp.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZmdm1hdGNnenFydWdwZHlsanNwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ2ODc1NjMsImV4cCI6MjA4MDI2MzU2M30.C19crt_vFGL3jx_6I6zCo4qRPYBksUH4M5GE7eJ3A3Q';
