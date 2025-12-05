@@ -94,7 +94,6 @@ body {
 .checkmark::after { content: '✓'; color: var(--bg-dark); font-size: 14px; font-weight: 700; opacity: 0; transition: opacity 0.2s; }
 .checkbox-container input:checked + .checkmark::after { opacity: 1; }
 .remember-text { font-size: 14px; color: var(--text-secondary); }
-
 .footer-text { margin-top: 32px; font-size: 14px; color: var(--text-secondary); }
 .footer-text a { color: var(--primary); text-decoration: none; font-weight: 600; }
 
@@ -170,6 +169,7 @@ main { padding: 20px; max-width: 600px; margin: 0 auto; }
 @keyframes spin { to { transform: rotate(360deg); } }
 .loading-overlay p { color: var(--text-secondary); font-size: 14px; }
 
+/* POPUP */
 .popup-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.95); display: none; align-items: center; justify-content: center; padding: 20px; z-index: 10000; }
 .popup-overlay.active { display: flex; }
 .popup-box { background: var(--bg-card); border-radius: var(--border-radius); padding: 32px 24px; max-width: 400px; width: 100%; border: 2px solid var(--primary); box-shadow: 0 0 40px rgba(255, 215, 0, 0.2); }
@@ -178,6 +178,7 @@ main { padding: 20px; max-width: 600px; margin: 0 auto; }
 .popup-header h3 { font-size: 22px; font-weight: 700; color: var(--primary); }
 .popup-desc { text-align: center; color: var(--text-secondary); font-size: 14px; margin-bottom: 24px; line-height: 1.5; }
 
+/* ========== ADMIN PANEL ========== */
 .admin-header { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); }
 .admin-badge { background: linear-gradient(135deg, #FFD700, #FFA500); color: #000; padding: 6px 14px; border-radius: 20px; font-weight: 700; font-size: 13px; }
 
@@ -202,6 +203,8 @@ main { padding: 20px; max-width: 600px; margin: 0 auto; }
 .admin-stat-card.azul { border-color: #007AFF; background: linear-gradient(135deg, rgba(0,122,255,0.1), transparent); }
 .admin-stat-card.morado { border-color: #AF52DE; background: linear-gradient(135deg, rgba(175,82,222,0.1), transparent); }
 .admin-stat-card.naranja { border-color: #FF9500; background: linear-gradient(135deg, rgba(255,149,0,0.1), transparent); }
+.admin-stat-card.dorado { border-color: #FFD700; background: linear-gradient(135deg, rgba(255,215,0,0.15), transparent); }
+.admin-stats-grid.dos-cols { grid-template-columns: repeat(2, 1fr); }
 .admin-stat-label { font-size: 14px; color: var(--text-secondary); margin-bottom: 8px; }
 .admin-stat-value { font-size: 36px; font-weight: 800; color: var(--text-primary); }
 .admin-stat-extra { font-size: 14px; color: var(--primary); margin-top: 4px; font-weight: 600; }
