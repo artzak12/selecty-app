@@ -113,19 +113,11 @@
                 </div>
             </div>
 
-            <!-- Sección Ofertas Especiales -->
-            <div class="seccion-destacada" id="seccion-ofertas" style="display:none;">
-                <div class="seccion-header">
-                    <span class="seccion-icon">🎁</span>
-                    <span class="seccion-titulo">Ofertas Especiales</span>
-                </div>
-                <div id="lista-ofertas" class="ofertas-list"></div>
-            </div>
-
             <div class="tabs">
                 <button class="tab active" data-tab="en-caja">📦 En mi caja</button>
                 <button class="tab" data-tab="historial">📜 Historial</button>
                 <button class="tab" data-tab="mis-bonos">💳 Mis Bonos</button>
+                <button class="tab" data-tab="ofertas">🎁 Ofertas</button>
             </div>
             <div class="tab-content">
                 <div id="tab-en-caja" class="tab-panel active">
@@ -150,6 +142,14 @@
                         <div class="empty-icon">💳</div>
                         <p>Sin bonos</p>
                         <span>Aqui apareceran tus bonos adquiridos</span>
+                    </div>
+                </div>
+                <div id="tab-ofertas" class="tab-panel">
+                    <div id="lista-ofertas" class="items-list"></div>
+                    <div id="empty-ofertas" class="empty-state">
+                        <div class="empty-icon">🎁</div>
+                        <p>Sin ofertas activas</p>
+                        <span>Estate atento a nuestras promociones</span>
                     </div>
                 </div>
             </div>
