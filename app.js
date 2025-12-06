@@ -461,11 +461,12 @@ async function cargarOfertas() {
             .eq('activo', true)
             .order('created_at', { ascending: false });
         
-        var seccionOfertas = document.getElementById('seccion-ofertas');
         var listaOfertas = document.getElementById('lista-ofertas');
+        var emptyOfertas = document.getElementById('empty-ofertas');
         
         if (!resp.data || resp.data.length === 0) {
-            seccionOfertas.style.display = 'none';
+            listaOfertas.style.display = 'none';
+            emptyOfertas.style.display = 'block';
             return;
         }
         
@@ -477,25 +478,29 @@ async function cargarOfertas() {
         });
         
         if (ofertasValidas.length === 0) {
-            seccionOfertas.style.display = 'none';
+            listaOfertas.style.display = 'none';
+            emptyOfertas.style.display = 'block';
             return;
         }
         
-        seccionOfertas.style.display = 'block';
+        listaOfertas.style.display = 'flex';
+        emptyOfertas.style.display = 'none';
         
         var html = '';
         for (var i = 0; i < ofertasValidas.length; i++) {
             var oferta = ofertasValidas[i];
-            html += '<div class="oferta-card">';
-            html += '<div class="oferta-icon">🎁</div>';
-            html += '<div class="oferta-info">';
-            html += '<div class="oferta-titulo">' + oferta.titulo + '</div>';
+            html += '<div class="item-card oferta-card-item">';
+            html += '<div class="item-info">';
+            html += '<div class="item-name">' + oferta.titulo + '</div>';
             if (oferta.descripcion) {
-                html += '<div class="oferta-descripcion">' + oferta.descripcion + '</div>';
+                html += '<div class="item-date">' + oferta.descripcion + '</div>';
             }
             if (oferta.codigo) {
-                html += '<div class="oferta-codigo">Código: <strong>' + oferta.codigo + '</strong></div>';
+                html += '<div class="oferta-codigo-badge">🏷️ ' + oferta.codigo + '</div>';
             }
+            html += '</div>';
+            html += '<div class="item-status">';
+            html += '<span class="oferta-icon-big">🎁</span>';
             html += '</div>';
             html += '</div>';
         }
