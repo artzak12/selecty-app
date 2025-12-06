@@ -93,14 +93,11 @@ async function recargarDatosCliente() {
     if (btnRecargar) btnRecargar.classList.add('rotating');
     showLoading();
     try {
-        // Recargar datos del cliente desde Supabase
         var resp = await supabase.from('clientes').select('*').eq('numero', clienteActual.numero).maybeSingle();
         if (resp.data) {
             clienteActual = resp.data;
         }
-        // Recargar ventas
         await cargarVentas();
-        // Actualizar la pantalla
         mostrarDatosCliente();
     } catch (err) {
         console.error('Error al recargar:', err);
@@ -133,7 +130,6 @@ async function login() {
             if (!password) { loginError.textContent = 'Introduce tu contrasena'; hideLoading(); return; }
             if (data.password !== password) { loginError.textContent = 'Contrasena incorrecta'; hideLoading(); return; }
         }
-        // Si no tiene contraseña, no dejarlo entrar - primero debe crearla
         if (!data.password) {
             clienteActual = data;
             hideLoading();
@@ -141,7 +137,6 @@ async function login() {
             return;
         }
         clienteActual = data;
-        // Solo guardar si "Recordarme" está marcado
         var recordarme = document.getElementById('recordarme');
         if (recordarme && recordarme.checked) {
             localStorage.setItem('clienteNumero', data.numero);
@@ -170,7 +165,6 @@ function mostrarDatosCliente() {
     document.getElementById('header-numero').textContent = '#' + clienteActual.numero;
     document.getElementById('header-nombre').textContent = clienteActual.nombre || 'Cliente';
     var bonoTotal = parseFloat(clienteActual.bono_total) || 0;
-    // CALCULAR bono gastado sumando las ventas (siempre actualizado)
     var bonoGastado = 0;
     for (var i = 0; i < ventasCliente.length; i++) {
         bonoGastado += parseFloat(ventasCliente[i].precio) || 0;
@@ -180,7 +174,7 @@ function mostrarDatosCliente() {
     document.getElementById('bono-disponible').textContent = formatMoney(bonoDisponible);
     document.getElementById('bono-total').textContent = formatMoney(bonoTotal);
     document.getElementById('bono-gastado').textContent = formatMoney(bonoGastado);
-    var pendientes = ventasCliente.filter(function(v) { return !v.enviado; });
+    var pendientes = ventasCliente.filter(function(v) { return !v.seguimiento; });
     document.getElementById('stat-en-caja').textContent = pendientes.length;
     document.getElementById('stat-total-compras').textContent = ventasCliente.length;
     if (ventasCliente.length > 0) document.getElementById('stat-ultima-compra').textContent = formatDate(ventasCliente[0].fecha);
@@ -189,8 +183,9 @@ function mostrarDatosCliente() {
 }
 
 function renderizarListas() {
-    var pendientes = ventasCliente.filter(function(v) { return !v.enviado; });
-    var enviados = ventasCliente.filter(function(v) { return v.enviado; });
+    var pendientes = ventasCliente.filter(function(v) { return !v.seguimiento; });
+    var enviados = ventasCliente.filter(function(v) { return v.seguimiento; });
+    
     var listaEnCaja = document.getElementById('lista-en-caja');
     var emptyCaja = document.getElementById('empty-caja');
     if (pendientes.length === 0) { listaEnCaja.style.display = 'none'; emptyCaja.style.display = 'block'; }
@@ -199,7 +194,7 @@ function renderizarListas() {
         var html = '';
         for (var i = 0; i < pendientes.length; i++) {
             var v = pendientes[i];
-            html += '<div class="item-card"><div class="item-info"><div class="item-name">' + (v.descripcion || 'Articulo') + '</div><div class="item-date">' + formatDateFull(v.fecha) + '</div></div><div class="item-status"><span class="item-price">' + formatMoney(v.precio) + '</span><span class="status-badge pendiente">Pendiente</span></div></div>';
+            html += '<div class="item-card"><div class="item-info"><div class="item-name">' + (v.descripcion || 'Articulo') + '</div><div class="item-date">' + formatDateFull(v.fecha) + '</div></div><div class="item-status"><span class="item-price">' + formatMoney(v.precio) + '</span><span class="status-badge pendiente">En caja</span></div></div>';
         }
         listaEnCaja.innerHTML = html;
     }
@@ -211,7 +206,11 @@ function renderizarListas() {
         var html = '';
         for (var i = 0; i < enviados.length; i++) {
             var v = enviados[i];
-            html += '<div class="item-card"><div class="item-info"><div class="item-name">' + (v.descripcion || 'Articulo') + '</div><div class="item-date">' + formatDateFull(v.fecha) + '</div></div><div class="item-status"><span class="item-price">' + formatMoney(v.precio) + '</span><span class="status-badge enviado">Enviado</span></div></div>';
+            var seguimientoHtml = '';
+            if (v.seguimiento) {
+                seguimientoHtml = '<a href="https://mygls.gls-spain.es/e/' + v.seguimiento + '/03130" target="_blank" class="seguimiento-link">📦 ' + v.seguimiento + '</a>';
+            }
+            html += '<div class="item-card enviado-card"><div class="item-info"><div class="item-name">' + (v.descripcion || 'Articulo') + '</div><div class="item-date">' + formatDateFull(v.fecha) + '</div>' + seguimientoHtml + '</div><div class="item-status"><span class="item-price">' + formatMoney(v.precio) + '</span><span class="status-badge enviado">Enviado</span></div></div>';
         }
         listaHistorial.innerHTML = html;
     }
@@ -270,7 +269,6 @@ function mostrarPopupCrearPassword() {
     var popup = document.getElementById('popup-password');
     if (popup) {
         popup.classList.add('active');
-        // Resetear estado
         document.getElementById('verificar-telefono').value = '';
         document.getElementById('nueva-password').value = '';
         document.getElementById('confirmar-password').value = '';
@@ -296,7 +294,6 @@ function verificarTelefono() {
         return;
     }
     
-    // Obtener teléfono del cliente
     var telefono = clienteActual.telefono || '';
     telefono = telefono.replace(/\s/g, '').replace(/-/g, '').replace(/\+/g, '');
     
@@ -312,7 +309,6 @@ function verificarTelefono() {
         return;
     }
     
-    // Verificación correcta
     telefonoVerificado = true;
     errorMsg.textContent = '';
     document.getElementById('password-fields').style.display = 'block';
@@ -339,7 +335,6 @@ async function guardarNuevaPassword() {
     try {
         await supabase.from('clientes').update({ password: password }).eq('numero', clienteActual.numero);
         clienteActual.password = password;
-        // Solo guardar si "Recordarme" está marcado
         var recordarme = document.getElementById('recordarme');
         if (recordarme && recordarme.checked) {
             localStorage.setItem('clienteNumero', clienteActual.numero);
@@ -355,12 +350,9 @@ async function guardarNuevaPassword() {
 async function cargarDatosAdmin() {
     showLoading();
     try {
-        // Primero cargar clientes
         var resp2 = await supabase.from('clientes').select('*').order('numero', { ascending: true });
         todosLosClientes = resp2.data || [];
         
-        // Cargar TODAS las ventas (sin limite de 1000)
-        // Supabase tiene limite de 1000 por defecto, usamos range para obtener más
         var allVentas = [];
         var pageSize = 1000;
         var offset = 0;
@@ -386,7 +378,6 @@ async function cargarDatosAdmin() {
         todasLasVentas = allVentas;
         console.log('Total ventas cargadas:', todasLasVentas.length);
         
-        // Cargar log de bonos (últimos 7 días para estadísticas)
         try {
             var hace7dias = new Date();
             hace7dias.setDate(hace7dias.getDate() - 7);
@@ -419,7 +410,6 @@ function actualizarDashboard() {
     var hoy = getHoy(); var ayer = getAyer(); var inicioSemana = getInicioSemana();
     console.log('Fechas - Hoy:', hoy, 'Ayer:', ayer, 'Inicio Semana:', inicioSemana);
     
-    // HOY = ventas de hoy desde las 08:00
     var ventasHoy = todasLasVentas.filter(function(v) {
         if (v.fecha !== hoy) return false;
         if (!v.hora) return true;
@@ -427,7 +417,6 @@ function actualizarDashboard() {
         return h >= 8;
     });
     
-    // AYER = ventas de ayer desde 08:00 + ventas de hoy antes de las 05:00 (madrugada)
     var ventasAyer = todasLasVentas.filter(function(v) {
         if (v.fecha === ayer) {
             if (!v.hora) return true;
@@ -442,11 +431,9 @@ function actualizarDashboard() {
         return false;
     });
     
-    // SEMANA = desde lunes 08:00 (ventas de madrugada del lunes van a semana anterior)
     var ventasSemana = todasLasVentas.filter(function(v) {
         if (v.fecha < inicioSemana) return false;
         if (v.fecha > inicioSemana) return true;
-        // Si es el lunes, solo contar desde las 08:00
         if (v.fecha === inicioSemana) {
             if (!v.hora) return true;
             var h = parseInt(v.hora.split(':')[0]);
@@ -465,7 +452,6 @@ function actualizarDashboard() {
     document.getElementById('admin-ventas-semana').textContent = ventasSemana.length;
     document.getElementById('admin-total-semana').textContent = formatMoney(sumarPrecios(ventasSemana));
     
-    // TURNOS - Mañana: 10-18h, Tarde: 18-6h
     var ventasManana = ventasHoy.filter(function(v) { if (!v.hora) return false; var h = parseInt(v.hora.split(':')[0]); return h >= 10 && h < 18; });
     var ventasTarde = ventasHoy.filter(function(v) { if (!v.hora) return false; var h = parseInt(v.hora.split(':')[0]); return h >= 18; });
     
@@ -474,7 +460,6 @@ function actualizarDashboard() {
     document.getElementById('turno-tarde-ventas').textContent = ventasTarde.length + ' ventas';
     document.getElementById('turno-tarde-total').textContent = formatMoney(sumarPrecios(ventasTarde));
     
-    // BONOS CARGADOS - HOY (desde 08:00) y AYER (08:00 a 08:00)
     var bonosHoy = todosLosBonos.filter(function(b) {
         if (b.fecha !== hoy) return false;
         if (!b.hora) return true;
@@ -507,7 +492,6 @@ function actualizarDashboard() {
     document.getElementById('admin-bonos-ayer').textContent = bonosAyer.length;
     document.getElementById('admin-bonos-total-ayer').textContent = formatMoney(totalBonosAyer);
     
-    // Top 5
     var clienteGastos = {};
     for (var i = 0; i < todasLasVentas.length; i++) { var v = todasLasVentas[i]; if (!clienteGastos[v.numero_cliente]) clienteGastos[v.numero_cliente] = 0; clienteGastos[v.numero_cliente] += parseFloat(v.precio) || 0; }
     var ranking = [];
@@ -519,7 +503,6 @@ function actualizarDashboard() {
     document.getElementById('top-clientes').innerHTML = topHtml || '<p style="color:#888;">Sin datos</p>';
 }
 
-// Función para calcular el total gastado de un cliente sumando sus ventas
 function calcularGastadoCliente(numeroCliente) {
     var total = 0;
     for (var i = 0; i < todasLasVentas.length; i++) {
@@ -535,7 +518,6 @@ function mostrarListaClientes() {
     for (var i = 0; i < todosLosClientes.length; i++) { 
         var c = todosLosClientes[i]; 
         var bonoTotal = parseFloat(c.bono_total) || 0;
-        // Calcular gastado sumando las ventas del cliente
         var bonoGastado = calcularGastadoCliente(c.numero);
         var bonoDisponible = bonoTotal - bonoGastado;
         if (bonoDisponible < 0) bonoDisponible = 0;
@@ -561,7 +543,6 @@ function mostrarClienteParaEditar(cliente) {
     document.getElementById('edit-cliente-nombre').textContent = cliente.nombre || 'Sin nombre';
     document.getElementById('edit-nombre').value = cliente.nombre || '';
     document.getElementById('edit-bono-total').value = cliente.bono_total || 0;
-    // Calcular bono gastado sumando ventas (valor real actualizado)
     var bonoGastadoReal = calcularGastadoCliente(cliente.numero);
     document.getElementById('edit-bono-gastado').value = bonoGastadoReal.toFixed(2);
     document.getElementById('edit-password').value = cliente.password || '';
