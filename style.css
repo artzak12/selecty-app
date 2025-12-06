@@ -385,6 +385,32 @@ main { padding: 20px; max-width: 600px; margin: 0 auto; }
     font-size: 48px;
     opacity: 0.8;
 }
+.live-icon-big.pulse {
+    animation: pulse 1.5s ease-in-out infinite;
+}
+@keyframes pulse {
+    0%, 100% { transform: scale(1); opacity: 0.8; }
+    50% { transform: scale(1.1); opacity: 1; }
+}
+.live-contador {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--primary);
+    margin-top: 8px;
+    background: rgba(212, 175, 55, 0.15);
+    padding: 6px 14px;
+    border-radius: 8px;
+    display: inline-block;
+}
+.live-titulo.live-ahora {
+    color: #ef4444;
+    font-size: 20px;
+    animation: blink 1s ease-in-out infinite;
+}
+@keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+}
 
 /* Ofertas */
 .ofertas-list {
