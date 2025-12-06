@@ -187,6 +187,8 @@ function mostrarDatosCliente() {
     document.getElementById('estado-caja').textContent = pendientes.length > 0 ? pendientes.length + ' pendientes' : 'Vacia';
     renderizarListas();
     cargarBonosCliente();
+    cargarProximoLive();
+    cargarOfertas();
 }
 
 function renderizarListas() {
@@ -266,6 +268,101 @@ async function cargarBonosCliente() {
         listaBonos.innerHTML = html;
     } catch (err) {
         console.error('Error cargando bonos:', err);
+    }
+}
+
+async function cargarProximoLive() {
+    try {
+        var hoy = getHoy();
+        // Buscar lives activos con fecha >= hoy, ordenados por fecha
+        var resp = await supabase
+            .from('proximos_lives')
+            .select('*')
+            .eq('activo', true)
+            .gte('fecha', hoy)
+            .order('fecha', { ascending: true })
+            .order('hora', { ascending: true })
+            .limit(1);
+        
+        var seccionLives = document.getElementById('seccion-lives');
+        var contenido = document.getElementById('proximo-live-content');
+        
+        if (!resp.data || resp.data.length === 0) {
+            // No hay lives programados
+            contenido.innerHTML = '<div class="live-info"><div class="live-titulo">Sin LIVE programado</div><div class="live-fecha">¡Estate atento a nuestras redes!</div></div>';
+            return;
+        }
+        
+        var live = resp.data[0];
+        var fechaLive = formatDateFull(live.fecha);
+        var horaLive = live.hora ? live.hora.substring(0, 5) : '';
+        
+        var html = '<div class="live-info">';
+        html += '<div class="live-titulo">' + (live.titulo || 'LIVE en directo') + '</div>';
+        html += '<div class="live-fecha">📅 ' + fechaLive + ' a las ' + horaLive + '</div>';
+        if (live.descripcion) {
+            html += '<div class="live-descripcion">' + live.descripcion + '</div>';
+        }
+        html += '</div>';
+        html += '<div class="live-icon-big">📺</div>';
+        
+        contenido.innerHTML = html;
+    } catch (err) {
+        console.error('Error cargando lives:', err);
+    }
+}
+
+async function cargarOfertas() {
+    try {
+        var hoy = getHoy();
+        // Buscar ofertas activas
+        var resp = await supabase
+            .from('ofertas')
+            .select('*')
+            .eq('activo', true)
+            .order('created_at', { ascending: false });
+        
+        var seccionOfertas = document.getElementById('seccion-ofertas');
+        var listaOfertas = document.getElementById('lista-ofertas');
+        
+        if (!resp.data || resp.data.length === 0) {
+            seccionOfertas.style.display = 'none';
+            return;
+        }
+        
+        // Filtrar por fecha si tienen fecha_fin
+        var ofertasValidas = resp.data.filter(function(o) {
+            if (o.fecha_fin && o.fecha_fin < hoy) return false;
+            if (o.fecha_inicio && o.fecha_inicio > hoy) return false;
+            return true;
+        });
+        
+        if (ofertasValidas.length === 0) {
+            seccionOfertas.style.display = 'none';
+            return;
+        }
+        
+        seccionOfertas.style.display = 'block';
+        
+        var html = '';
+        for (var i = 0; i < ofertasValidas.length; i++) {
+            var oferta = ofertasValidas[i];
+            html += '<div class="oferta-card">';
+            html += '<div class="oferta-icon">🎁</div>';
+            html += '<div class="oferta-info">';
+            html += '<div class="oferta-titulo">' + oferta.titulo + '</div>';
+            if (oferta.descripcion) {
+                html += '<div class="oferta-descripcion">' + oferta.descripcion + '</div>';
+            }
+            if (oferta.codigo) {
+                html += '<div class="oferta-codigo">Código: <strong>' + oferta.codigo + '</strong></div>';
+            }
+            html += '</div>';
+            html += '</div>';
+        }
+        listaOfertas.innerHTML = html;
+    } catch (err) {
+        console.error('Error cargando ofertas:', err);
     }
 }
 
