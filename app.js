@@ -116,11 +116,19 @@ async function login() {
     loginError.textContent = '';
     showLoading();
     if (numero.toLowerCase() === 'admin') {
-        if (password === ADMIN_PASSWORD) {
-            isAdmin = true;
-            await cargarDatosAdmin();
-            showScreen(adminScreen);
-        } else { loginError.textContent = 'Contrasena de admin incorrecta'; }
+        // Verificar contraseña de admin en Supabase (seguro)
+        try {
+            var resp = await supabase.rpc('verificar_admin', { pass: password });
+            if (resp.data === true) {
+                isAdmin = true;
+                await cargarDatosAdmin();
+                showScreen(adminScreen);
+            } else {
+                loginError.textContent = 'Contrasena de admin incorrecta';
+            }
+        } catch (err) {
+            loginError.textContent = 'Error verificando admin';
+        }
         hideLoading();
         return;
     }
