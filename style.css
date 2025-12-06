@@ -477,3 +477,19 @@ main { padding: 20px; max-width: 600px; margin: 0 auto; }
     font-weight: 600;
     border-radius: 6px;
 }
+.oferta-contador {
+    display: inline-block;
+    margin-top: 8px;
+    margin-left: 8px;
+    padding: 4px 12px;
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    color: white;
+    font-size: 12px;
+    font-weight: 700;
+    border-radius: 6px;
+    animation: pulse-oferta 2s ease-in-out infinite;
+}
+@keyframes pulse-oferta {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+}
