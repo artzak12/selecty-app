@@ -471,9 +471,24 @@ async function cargarOfertas() {
         }
         
         // Filtrar por fecha si tienen fecha_fin
+        // Función para normalizar fecha a YYYY-MM-DD
+        function normalizarFecha(f) {
+            if (!f) return null;
+            // Si ya está en formato YYYY-MM-DD
+            if (f.match(/^\d{4}-\d{2}-\d{2}$/)) return f;
+            // Si está en formato DD-MM-YYYY o DD/MM/YYYY
+            var partes = f.split(/[-\/]/);
+            if (partes.length === 3 && partes[0].length <= 2) {
+                return partes[2] + '-' + partes[1].padStart(2, '0') + '-' + partes[0].padStart(2, '0');
+            }
+            return f;
+        }
+        
         var ofertasValidas = resp.data.filter(function(o) {
-            if (o.fecha_fin && o.fecha_fin < hoy) return false;
-            if (o.fecha_inicio && o.fecha_inicio > hoy) return false;
+            var fechaFin = normalizarFecha(o.fecha_fin);
+            var fechaInicio = normalizarFecha(o.fecha_inicio);
+            if (fechaFin && fechaFin < hoy) return false;
+            if (fechaInicio && fechaInicio > hoy) return false;
             return true;
         });
         
