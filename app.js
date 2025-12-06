@@ -451,6 +451,71 @@ async function cargarProximoLive() {
     }
 }
 
+function calcularContadorOferta(fechaFin) {
+    if (!fechaFin) return null;
+    
+    // Normalizar fecha
+    var fechaNorm = fechaFin;
+    if (fechaFin.match(/^\d{2}[-\/]\d{2}[-\/]\d{4}$/)) {
+        var partes = fechaFin.split(/[-\/]/);
+        fechaNorm = partes[2] + '-' + partes[1] + '-' + partes[0];
+    }
+    
+    // Crear fecha fin a las 23:59:59
+    var fin = new Date(fechaNorm + 'T23:59:59');
+    var ahora = new Date();
+    var diff = fin - ahora;
+    
+    if (diff <= 0) return 'Finalizada';
+    
+    var segundos = Math.floor(diff / 1000);
+    var minutos = Math.floor(segundos / 60);
+    var horas = Math.floor(minutos / 60);
+    var dias = Math.floor(horas / 24);
+    
+    horas = horas % 24;
+    minutos = minutos % 60;
+    segundos = segundos % 60;
+    
+    if (dias > 0) {
+        return dias + 'd ' + horas + 'h ' + minutos + 'm';
+    } else if (horas > 0) {
+        return horas + 'h ' + minutos + 'm ' + segundos + 's';
+    } else {
+        return minutos + 'm ' + segundos + 's';
+    }
+}
+
+function renderizarOfertas() {
+    var listaOfertas = document.getElementById('lista-ofertas');
+    if (!listaOfertas || !window.ofertasActivas) return;
+    
+    var html = '';
+    for (var i = 0; i < window.ofertasActivas.length; i++) {
+        var oferta = window.ofertasActivas[i];
+        var contador = calcularContadorOferta(oferta.fecha_fin);
+        
+        html += '<div class="item-card oferta-card-item">';
+        html += '<div class="item-info">';
+        html += '<div class="item-name">' + oferta.titulo + '</div>';
+        if (oferta.descripcion) {
+            html += '<div class="item-date">' + oferta.descripcion + '</div>';
+        }
+        if (oferta.codigo) {
+            html += '<div class="oferta-codigo-badge">🏷️ ' + oferta.codigo + '</div>';
+        }
+        if (contador) {
+            html += '<div class="oferta-contador">⏱️ Acaba en: ' + contador + '</div>';
+        }
+        html += '</div>';
+        html += '<div class="item-status">';
+        html += '<span class="oferta-icon-big">🎁</span>';
+        html += '</div>';
+        html += '</div>';
+    }
+    listaOfertas.innerHTML = html;
+}
+
 async function cargarOfertas() {
     try {
         var hoy = getHoy();
@@ -501,25 +566,14 @@ async function cargarOfertas() {
         listaOfertas.style.display = 'flex';
         emptyOfertas.style.display = 'none';
         
-        var html = '';
-        for (var i = 0; i < ofertasValidas.length; i++) {
-            var oferta = ofertasValidas[i];
-            html += '<div class="item-card oferta-card-item">';
-            html += '<div class="item-info">';
-            html += '<div class="item-name">' + oferta.titulo + '</div>';
-            if (oferta.descripcion) {
-                html += '<div class="item-date">' + oferta.descripcion + '</div>';
-            }
-            if (oferta.codigo) {
-                html += '<div class="oferta-codigo-badge">🏷️ ' + oferta.codigo + '</div>';
-            }
-            html += '</div>';
-            html += '<div class="item-status">';
-            html += '<span class="oferta-icon-big">🎁</span>';
-            html += '</div>';
-            html += '</div>';
-        }
-        listaOfertas.innerHTML = html;
+        // Guardar ofertas para el contador
+        window.ofertasActivas = ofertasValidas;
+        
+        renderizarOfertas();
+        
+        // Iniciar contador de ofertas
+        if (window.contadorOfertasInterval) clearInterval(window.contadorOfertasInterval);
+        window.contadorOfertasInterval = setInterval(renderizarOfertas, 1000);
     } catch (err) {
         console.error('Error cargando ofertas:', err);
     }
