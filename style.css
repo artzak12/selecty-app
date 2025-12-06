@@ -328,3 +328,101 @@ main { padding: 20px; max-width: 600px; margin: 0 auto; }
 #tab-mis-bonos.active {
     display: block;
 }
+
+/* Secciones destacadas (LIVES y Ofertas) */
+.seccion-destacada {
+    margin: 12px 16px;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    border-radius: 16px;
+    padding: 16px;
+    border: 1px solid #2d3748;
+}
+.seccion-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+.seccion-icon {
+    font-size: 24px;
+}
+.seccion-titulo {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--primary);
+}
+
+/* Live Card */
+.live-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: linear-gradient(135deg, #0f3460 0%, #16213e 100%);
+    border-radius: 12px;
+    padding: 16px;
+    border: 1px solid #e94560;
+}
+.live-info {
+    flex: 1;
+}
+.live-titulo {
+    font-size: 18px;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 6px;
+}
+.live-fecha {
+    font-size: 14px;
+    color: #e94560;
+    font-weight: 600;
+}
+.live-descripcion {
+    font-size: 13px;
+    color: #a0aec0;
+    margin-top: 8px;
+}
+.live-icon-big {
+    font-size: 48px;
+    opacity: 0.8;
+}
+
+/* Ofertas */
+.ofertas-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+.oferta-card {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: linear-gradient(135deg, #2d1b4e 0%, #1a1a2e 100%);
+    border-radius: 12px;
+    padding: 14px;
+    border: 1px solid #9333ea;
+}
+.oferta-icon {
+    font-size: 32px;
+}
+.oferta-info {
+    flex: 1;
+}
+.oferta-titulo {
+    font-size: 15px;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 4px;
+}
+.oferta-descripcion {
+    font-size: 13px;
+    color: #a0aec0;
+}
+.oferta-codigo {
+    margin-top: 8px;
+    display: inline-block;
+    background: linear-gradient(135deg, #9333ea 0%, #7e22ce 100%);
+    color: white;
+    padding: 4px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+}
