@@ -271,10 +271,136 @@ async function cargarBonosCliente() {
     }
 }
 
+// Horario fijo de LIVES
+var HORARIO_LIVES = {
+    0: [{ inicio: '18:00', fin: '01:00', nombre: 'Domingo Noche' }], // Domingo
+    1: [{ inicio: '11:00', fin: '15:00', nombre: 'Lunes Mañana' }, { inicio: '19:00', fin: '01:00', nombre: 'Lunes Noche' }], // Lunes
+    2: [{ inicio: '11:00', fin: '15:00', nombre: 'Martes Mañana' }, { inicio: '19:00', fin: '01:00', nombre: 'Martes Noche' }], // Martes
+    3: [{ inicio: '11:00', fin: '15:00', nombre: 'Miércoles Mañana' }, { inicio: '19:00', fin: '01:00', nombre: 'Miércoles Noche' }], // Miércoles
+    4: [{ inicio: '19:00', fin: '01:00', nombre: 'Jueves Noche' }], // Jueves
+    5: [{ inicio: '19:00', fin: '01:00', nombre: 'Viernes Noche' }], // Viernes
+    6: [{ inicio: '19:00', fin: '04:00', nombre: 'Sábado Noche' }]  // Sábado
+};
+
+var contadorInterval = null;
+
+function getProximoLiveHorario() {
+    var ahora = new Date();
+    var diaActual = ahora.getDay();
+    var horaActual = ahora.getHours();
+    var minActual = ahora.getMinutes();
+    var tiempoActual = horaActual * 60 + minActual;
+    
+    // Buscar en los próximos 7 días
+    for (var i = 0; i < 7; i++) {
+        var dia = (diaActual + i) % 7;
+        var horarios = HORARIO_LIVES[dia] || [];
+        
+        for (var j = 0; j < horarios.length; j++) {
+            var h = horarios[j];
+            var partesInicio = h.inicio.split(':');
+            var tiempoInicio = parseInt(partesInicio[0]) * 60 + parseInt(partesInicio[1]);
+            
+            // Si es hoy, verificar si el LIVE ya pasó
+            if (i === 0) {
+                // Verificar si estamos EN el LIVE (entre inicio y fin)
+                var partesFin = h.fin.split(':');
+                var tiempoFin = parseInt(partesFin[0]) * 60 + parseInt(partesFin[1]);
+                if (tiempoFin < tiempoInicio) tiempoFin += 24 * 60; // Cruza medianoche
+                
+                var tiempoActualAjustado = tiempoActual;
+                if (tiempoActual < tiempoInicio && tiempoFin > 24 * 60) {
+                    tiempoActualAjustado += 24 * 60;
+                }
+                
+                if (tiempoActualAjustado >= tiempoInicio && tiempoActualAjustado <= tiempoFin) {
+                    // ¡Estamos EN el LIVE ahora!
+                    return { enVivo: true, nombre: h.nombre, fin: h.fin };
+                }
+                
+                if (tiempoActual >= tiempoInicio) {
+                    continue; // Ya pasó, siguiente
+                }
+            }
+            
+            // Calcular fecha del próximo LIVE
+            var fechaLive = new Date(ahora);
+            fechaLive.setDate(fechaLive.getDate() + i);
+            fechaLive.setHours(parseInt(partesInicio[0]), parseInt(partesInicio[1]), 0, 0);
+            
+            return {
+                enVivo: false,
+                nombre: h.nombre,
+                fecha: fechaLive,
+                horaInicio: h.inicio,
+                horaFin: h.fin
+            };
+        }
+    }
+    return null;
+}
+
+function formatContador(ms) {
+    if (ms <= 0) return '¡Ahora!';
+    var segundos = Math.floor(ms / 1000);
+    var minutos = Math.floor(segundos / 60);
+    var horas = Math.floor(minutos / 60);
+    var dias = Math.floor(horas / 24);
+    
+    horas = horas % 24;
+    minutos = minutos % 60;
+    segundos = segundos % 60;
+    
+    if (dias > 0) {
+        return dias + 'd ' + horas + 'h ' + minutos + 'm';
+    } else if (horas > 0) {
+        return horas + 'h ' + minutos + 'm ' + segundos + 's';
+    } else {
+        return minutos + 'm ' + segundos + 's';
+    }
+}
+
+function actualizarContadorLive() {
+    var contenido = document.getElementById('proximo-live-content');
+    if (!contenido) return;
+    
+    var proximo = getProximoLiveHorario();
+    
+    if (!proximo) {
+        contenido.innerHTML = '<div class="live-info"><div class="live-titulo">Sin LIVE programado</div></div>';
+        return;
+    }
+    
+    if (proximo.enVivo) {
+        // ¡Estamos EN VIVO!
+        contenido.innerHTML = '<div class="live-info">' +
+            '<div class="live-titulo live-ahora">🔴 ¡EN DIRECTO!</div>' +
+            '<div class="live-fecha">' + proximo.nombre + '</div>' +
+            '<div class="live-descripcion">Hasta las ' + proximo.fin + '</div>' +
+            '</div>' +
+            '<div class="live-icon-big pulse">🔴</div>';
+    } else {
+        var ahora = new Date();
+        var diff = proximo.fecha - ahora;
+        var contador = formatContador(diff);
+        
+        var nombresDia = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+        var diaTexto = nombresDia[proximo.fecha.getDay()];
+        var fechaTexto = proximo.fecha.getDate() + '/' + (proximo.fecha.getMonth() + 1);
+        
+        contenido.innerHTML = '<div class="live-info">' +
+            '<div class="live-titulo">Próximo LIVE</div>' +
+            '<div class="live-fecha">📅 ' + diaTexto + ' ' + fechaTexto + ' a las ' + proximo.horaInicio + '</div>' +
+            '<div class="live-contador">⏱️ ' + contador + '</div>' +
+            '</div>' +
+            '<div class="live-icon-big">📺</div>';
+    }
+}
+
 async function cargarProximoLive() {
+    // Primero verificar si hay un LIVE especial programado en Supabase
     try {
         var hoy = getHoy();
-        // Buscar lives activos con fecha >= hoy, ordenados por fecha
         var resp = await supabase
             .from('proximos_lives')
             .select('*')
@@ -284,31 +410,44 @@ async function cargarProximoLive() {
             .order('hora', { ascending: true })
             .limit(1);
         
-        var seccionLives = document.getElementById('seccion-lives');
         var contenido = document.getElementById('proximo-live-content');
         
-        if (!resp.data || resp.data.length === 0) {
-            // No hay lives programados
-            contenido.innerHTML = '<div class="live-info"><div class="live-titulo">Sin LIVE programado</div><div class="live-fecha">¡Estate atento a nuestras redes!</div></div>';
-            return;
+        if (resp.data && resp.data.length > 0) {
+            // Hay un LIVE especial programado - mostrarlo
+            var live = resp.data[0];
+            var fechaLive = formatDateFull(live.fecha);
+            var horaLive = live.hora ? live.hora.substring(0, 5) : '';
+            
+            var html = '<div class="live-info">';
+            html += '<div class="live-titulo">🌟 ' + (live.titulo || 'LIVE Especial') + '</div>';
+            html += '<div class="live-fecha">📅 ' + fechaLive + ' a las ' + horaLive + '</div>';
+            if (live.descripcion) {
+                html += '<div class="live-descripcion">' + live.descripcion + '</div>';
+            }
+            html += '</div>';
+            html += '<div class="live-icon-big">⭐</div>';
+            
+            contenido.innerHTML = html;
+            
+            // Limpiar intervalo si existe
+            if (contadorInterval) {
+                clearInterval(contadorInterval);
+                contadorInterval = null;
+            }
+        } else {
+            // No hay LIVE especial - usar horario fijo
+            actualizarContadorLive();
+            
+            // Actualizar contador cada segundo
+            if (contadorInterval) clearInterval(contadorInterval);
+            contadorInterval = setInterval(actualizarContadorLive, 1000);
         }
-        
-        var live = resp.data[0];
-        var fechaLive = formatDateFull(live.fecha);
-        var horaLive = live.hora ? live.hora.substring(0, 5) : '';
-        
-        var html = '<div class="live-info">';
-        html += '<div class="live-titulo">' + (live.titulo || 'LIVE en directo') + '</div>';
-        html += '<div class="live-fecha">📅 ' + fechaLive + ' a las ' + horaLive + '</div>';
-        if (live.descripcion) {
-            html += '<div class="live-descripcion">' + live.descripcion + '</div>';
-        }
-        html += '</div>';
-        html += '<div class="live-icon-big">📺</div>';
-        
-        contenido.innerHTML = html;
     } catch (err) {
         console.error('Error cargando lives:', err);
+        // Fallback: usar horario fijo
+        actualizarContadorLive();
+        if (contadorInterval) clearInterval(contadorInterval);
+        contadorInterval = setInterval(actualizarContadorLive, 1000);
     }
 }
 
