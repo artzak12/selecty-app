@@ -77,20 +77,10 @@
         <main>
             <div class="bono-card">
                 <div class="bono-header">
-                    <span class="bono-label">Tu bono disponible</span>
+                    <span class="bono-label">Tu saldo disponible</span>
                     <span class="bono-icon">💰</span>
                 </div>
                 <div class="bono-amount" id="bono-disponible">0,00 EUR</div>
-                <div class="bono-details">
-                    <div class="bono-detail">
-                        <span class="detail-label">Total cargado</span>
-                        <span class="detail-value" id="bono-total">0,00 EUR</span>
-                    </div>
-                    <div class="bono-detail">
-                        <span class="detail-label">Gastado</span>
-                        <span class="detail-value" id="bono-gastado">0,00 EUR</span>
-                    </div>
-                </div>
             </div>
             <div class="stats-grid">
                 <div class="stat-card">
@@ -112,6 +102,7 @@
             <div class="tabs">
                 <button class="tab active" data-tab="en-caja">📦 En mi caja</button>
                 <button class="tab" data-tab="historial">📜 Historial</button>
+                <button class="tab" data-tab="mis-bonos">💳 Mis Bonos</button>
             </div>
             <div class="tab-content">
                 <div id="tab-en-caja" class="tab-panel active">
@@ -128,6 +119,14 @@
                         <div class="empty-icon">📋</div>
                         <p>Sin historial</p>
                         <span>Aqui apareceran tus compras anteriores</span>
+                    </div>
+                </div>
+                <div id="tab-mis-bonos" class="tab-panel">
+                    <div id="lista-bonos" class="items-list"></div>
+                    <div id="empty-bonos" class="empty-state">
+                        <div class="empty-icon">💳</div>
+                        <p>Sin bonos</p>
+                        <span>Aqui apareceran tus bonos adquiridos</span>
                     </div>
                 </div>
             </div>
