@@ -1135,3 +1135,4 @@ document.addEventListener('DOMContentLoaded', function() {
         filtroFecha.addEventListener('change', mostrarListaVentas);
     }
 });
+   Fix: Eliminar declaración duplicada de supabase
