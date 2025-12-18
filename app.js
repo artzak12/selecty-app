@@ -1,16 +1,76 @@
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+// APP_CLIENTES v2.0 - Fix: Eliminada declaración duplicada de 'supabase'
+// Variables globales
+var loginScreen, mainScreen, adminScreen, loadingOverlay;
+var inputNumero, inputPassword, btnLogin, loginError, btnLogout, btnAdminLogout;
+// supabase se inicializa en initApp() sin declaración previa para evitar conflictos
 
-const loginScreen = document.getElementById('login-screen');
-const mainScreen = document.getElementById('main-screen');
-const adminScreen = document.getElementById('admin-screen');
-const loadingOverlay = document.getElementById('loading');
+// Inicializar Supabase y elementos del DOM
+function initApp() {
+    try {
+        if (!window.supabase) {
+            console.error('Supabase no está cargado');
+            alert('Error: No se pudo cargar Supabase. Verifica tu conexión a internet.');
+            return;
+        }
+        
+        if (!SUPABASE_URL || !SUPABASE_KEY) {
+            console.error('Variables de configuración no disponibles');
+            alert('Error: Configuración de Supabase no disponible');
+            return;
+        }
+        
+        // Crear cliente de Supabase (variable global implícita)
+        supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        console.log('Supabase inicializado');
 
-const inputNumero = document.getElementById('input-numero');
-const inputPassword = document.getElementById('input-password');
-const btnLogin = document.getElementById('btn-login');
-const loginError = document.getElementById('login-error');
-const btnLogout = document.getElementById('btn-logout');
-const btnAdminLogout = document.getElementById('btn-admin-logout');
+        loginScreen = document.getElementById('login-screen');
+        mainScreen = document.getElementById('main-screen');
+        adminScreen = document.getElementById('admin-screen');
+        loadingOverlay = document.getElementById('loading');
+
+        inputNumero = document.getElementById('input-numero');
+        inputPassword = document.getElementById('input-password');
+        btnLogin = document.getElementById('btn-login');
+        loginError = document.getElementById('login-error');
+        btnLogout = document.getElementById('btn-logout');
+        btnAdminLogout = document.getElementById('btn-admin-logout');
+        
+        if (!inputNumero || !inputPassword || !btnLogin || !loginError) {
+            console.error('Elementos del DOM no encontrados:', {
+                inputNumero: !!inputNumero,
+                inputPassword: !!inputPassword,
+                btnLogin: !!btnLogin,
+                loginError: !!loginError
+            });
+            return;
+        }
+        
+        console.log('Elementos del DOM cargados correctamente');
+        
+        // Conectar eventos
+        if (btnLogin) {
+            btnLogin.addEventListener('click', login);
+            console.log('Botón de login conectado');
+        }
+        if (btnLogout) btnLogout.addEventListener('click', logout);
+        if (btnAdminLogout) btnAdminLogout.addEventListener('click', logout);
+        if (inputNumero) {
+            inputNumero.addEventListener('keypress', function(e) { 
+                if (e.key === 'Enter') {
+                    if (inputPassword) inputPassword.focus();
+                }
+            });
+        }
+        if (inputPassword) {
+            inputPassword.addEventListener('keypress', function(e) { 
+                if (e.key === 'Enter') login(); 
+            });
+        }
+    } catch (err) {
+        console.error('Error inicializando app:', err);
+        alert('Error inicializando la aplicación: ' + err.message);
+    }
+}
 
 let clienteActual = null;
 let ventasCliente = [];
@@ -20,8 +80,12 @@ let todosLosBonos = [];
 let isAdmin = false;
 let clienteEditando = null;
 
-function showLoading() { loadingOverlay.classList.add('active'); }
-function hideLoading() { loadingOverlay.classList.remove('active'); }
+function showLoading() { 
+    if (loadingOverlay) loadingOverlay.classList.add('active'); 
+}
+function hideLoading() { 
+    if (loadingOverlay) loadingOverlay.classList.remove('active'); 
+}
 
 function formatMoney(amount) {
     return (parseFloat(amount) || 0).toFixed(2).replace('.', ',') + ' EUR';
@@ -47,9 +111,10 @@ function formatHora(horaStr) {
 }
 
 function showScreen(screen) {
-    loginScreen.classList.remove('active');
-    mainScreen.classList.remove('active');
-    adminScreen.classList.remove('active');
+    if (!screen) return;
+    if (loginScreen) loginScreen.classList.remove('active');
+    if (mainScreen) mainScreen.classList.remove('active');
+    if (adminScreen) adminScreen.classList.remove('active');
     screen.classList.add('active');
 }
 
@@ -110,37 +175,76 @@ async function recargarDatosCliente() {
 }
 
 async function login() {
-    var numero = inputNumero.value.trim();
-    var password = inputPassword.value.trim();
-    if (!numero) { loginError.textContent = 'Introduce tu numero de caja'; return; }
-    loginError.textContent = '';
-    showLoading();
-    if (numero.toLowerCase() === 'admin') {
-        // Verificar contraseña de admin en Supabase (seguro)
-        try {
-            var resp = await supabase.rpc('verificar_admin', { pass: password });
-            if (resp.data === true) {
-                isAdmin = true;
-                await cargarDatosAdmin();
-                showScreen(adminScreen);
-            } else {
-                loginError.textContent = 'Contrasena de admin incorrecta';
-            }
-        } catch (err) {
-            loginError.textContent = 'Error verificando admin';
-        }
-        hideLoading();
-        return;
-    }
+    console.log('Login llamado');
     try {
+        if (!inputNumero || !inputPassword || !loginError) {
+            console.error('Elementos del DOM no encontrados');
+            alert('Error: La aplicación no se cargó correctamente. Por favor, recarga la página.');
+            return;
+        }
+        
+        var numero = inputNumero.value.trim();
+        var password = inputPassword.value.trim();
+        console.log('Número:', numero);
+        if (!numero) { loginError.textContent = 'Introduce tu numero de caja'; return; }
+        loginError.textContent = '';
+        showLoading();
+        
+        if (numero.toLowerCase() === 'admin') {
+            // Verificar contraseña de admin en Supabase (seguro)
+            try {
+                var resp = await supabase.rpc('verificar_admin', { pass: password });
+                if (resp.data === true) {
+                    isAdmin = true;
+                    await cargarDatosAdmin();
+                    showScreen(adminScreen);
+                } else {
+                    loginError.textContent = 'Contrasena de admin incorrecta';
+                }
+            } catch (err) {
+                console.error('Error verificando admin:', err);
+                loginError.textContent = 'Error verificando admin: ' + (err.message || 'Error desconocido');
+            }
+            hideLoading();
+            return;
+        }
+        
+        // Verificar que supabase esté disponible
+        if (!supabase) {
+            loginError.textContent = 'Error: No se pudo conectar con el servidor';
+            hideLoading();
+            return;
+        }
+        
         var resp = await supabase.from('clientes').select('*').eq('numero', parseInt(numero)).maybeSingle();
-        if (resp.error) { loginError.textContent = 'Error de conexion'; hideLoading(); return; }
-        if (!resp.data) { loginError.textContent = 'No se encontro esa caja'; hideLoading(); return; }
+        
+        if (resp.error) {
+            console.error('Error Supabase:', resp.error);
+            loginError.textContent = 'Error de conexion: ' + (resp.error.message || 'Error desconocido');
+            hideLoading();
+            return;
+        }
+        
+        if (!resp.data) {
+            loginError.textContent = 'No se encontro esa caja';
+            hideLoading();
+            return;
+        }
+        
         var data = resp.data;
         if (data.password) {
-            if (!password) { loginError.textContent = 'Introduce tu contrasena'; hideLoading(); return; }
-            if (data.password !== password) { loginError.textContent = 'Contrasena incorrecta'; hideLoading(); return; }
+            if (!password) {
+                loginError.textContent = 'Introduce tu contrasena';
+                hideLoading();
+                return;
+            }
+            if (data.password !== password) {
+                loginError.textContent = 'Contrasena incorrecta';
+                hideLoading();
+                return;
+            }
         }
+        
         // Si no tiene contraseña, no dejarlo entrar - primero debe crearla
         if (!data.password) {
             clienteActual = data;
@@ -148,6 +252,7 @@ async function login() {
             mostrarPopupCrearPassword();
             return;
         }
+        
         clienteActual = data;
         // Solo guardar si "Recordarme" está marcado
         var recordarme = document.getElementById('recordarme');
@@ -158,11 +263,16 @@ async function login() {
             localStorage.removeItem('clienteNumero');
             localStorage.removeItem('clientePassword');
         }
+        
         await cargarVentas();
         mostrarDatosCliente();
         showScreen(mainScreen);
-    } catch (err) { loginError.textContent = 'Error al conectar'; }
-    hideLoading();
+        hideLoading();
+    } catch (err) {
+        console.error('Error en login:', err);
+        loginError.textContent = 'Error al conectar: ' + (err.message || 'Error desconocido');
+        hideLoading();
+    }
 }
 
 async function cargarVentas() {
@@ -184,9 +294,14 @@ function mostrarDatosCliente() {
         bonoGastado += parseFloat(ventasCliente[i].precio) || 0;
     }
     var bonoDisponible = bonoTotal - bonoGastado;
-    if (bonoDisponible < 0) bonoDisponible = 0;
-    // Solo mostrar el saldo disponible (sin desglose)
-    document.getElementById('bono-disponible').textContent = formatMoney(bonoDisponible);
+    // Mostrar el saldo disponible (incluyendo negativos con estilo diferente)
+    var bonoElement = document.getElementById('bono-disponible');
+    bonoElement.textContent = formatMoney(bonoDisponible);
+    if (bonoDisponible < 0) {
+        bonoElement.classList.add('negativo');
+    } else {
+        bonoElement.classList.remove('negativo');
+    }
     // Pendientes = productos SIN seguimiento (aún no enviados)
     var pendientes = ventasCliente.filter(function(v) { return !v.seguimiento; });
     document.getElementById('stat-en-caja').textContent = pendientes.length;
@@ -908,8 +1023,8 @@ function mostrarListaClientes() {
         // Calcular gastado sumando las ventas del cliente
         var bonoGastado = calcularGastadoCliente(c.numero);
         var bonoDisponible = bonoTotal - bonoGastado;
-        if (bonoDisponible < 0) bonoDisponible = 0;
-        html += '<div class="cliente-mini" onclick="buscarClientePorNumero(' + c.numero + ')"><span class="cliente-mini-num">#' + c.numero + '</span><span class="cliente-mini-nombre">' + (c.nombre || 'Sin nombre') + '</span><span class="cliente-mini-bono">' + formatMoney(bonoDisponible) + '</span></div>'; 
+        var claseNegativo = bonoDisponible < 0 ? ' negativo' : '';
+        html += '<div class="cliente-mini" onclick="buscarClientePorNumero(' + c.numero + ')"><span class="cliente-mini-num">#' + c.numero + '</span><span class="cliente-mini-nombre">' + (c.nombre || 'Sin nombre') + '</span><span class="cliente-mini-bono' + claseNegativo + '">' + formatMoney(bonoDisponible) + '</span></div>'; 
     }
     document.getElementById('lista-todos-clientes').innerHTML = html || '<p style="color:#888;">No hay clientes</p>';
 }
@@ -979,17 +1094,44 @@ async function borrarVentaAdmin(ventaId) {
     catch (err) { alert('Error'); }
 }
 
-if ('serviceWorker' in navigator) { window.addEventListener('load', function() { navigator.serviceWorker.register('sw.js').catch(function() {}); }); }
+if ('serviceWorker' in navigator) { 
+    window.addEventListener('load', function() { 
+        navigator.serviceWorker.register('sw.js').catch(function() {}); 
+    }); 
+}
 
-btnLogin.addEventListener('click', login);
-btnLogout.addEventListener('click', logout);
-btnAdminLogout.addEventListener('click', logout);
-inputNumero.addEventListener('keypress', function(e) { if (e.key === 'Enter') inputPassword.focus(); });
-inputPassword.addEventListener('keypress', function(e) { if (e.key === 'Enter') login(); });
-document.getElementById('btn-buscar-cliente').addEventListener('click', buscarCliente);
-document.getElementById('admin-buscar-cliente').addEventListener('keypress', function(e) { if (e.key === 'Enter') buscarCliente(); });
-document.getElementById('btn-guardar-cliente').addEventListener('click', guardarCambiosCliente);
-document.getElementById('btn-filtrar-ventas').addEventListener('click', mostrarListaVentas);
-document.getElementById('filtro-fecha').addEventListener('change', mostrarListaVentas);
-
-document.addEventListener('DOMContentLoaded', function() { initTabs(); initAdminTabs(); checkAutoLogin(); });
+// Conectar eventos adicionales
+document.addEventListener('DOMContentLoaded', function() { 
+    initApp();
+    initTabs(); 
+    initAdminTabs(); 
+    checkAutoLogin(); 
+    
+    // Eventos adicionales que necesitan elementos del DOM
+    var btnBuscarCliente = document.getElementById('btn-buscar-cliente');
+    if (btnBuscarCliente) {
+        btnBuscarCliente.addEventListener('click', buscarCliente);
+    }
+    
+    var adminBuscarCliente = document.getElementById('admin-buscar-cliente');
+    if (adminBuscarCliente) {
+        adminBuscarCliente.addEventListener('keypress', function(e) { 
+            if (e.key === 'Enter') buscarCliente(); 
+        });
+    }
+    
+    var btnGuardarCliente = document.getElementById('btn-guardar-cliente');
+    if (btnGuardarCliente) {
+        btnGuardarCliente.addEventListener('click', guardarCambiosCliente);
+    }
+    
+    var btnFiltrarVentas = document.getElementById('btn-filtrar-ventas');
+    if (btnFiltrarVentas) {
+        btnFiltrarVentas.addEventListener('click', mostrarListaVentas);
+    }
+    
+    var filtroFecha = document.getElementById('filtro-fecha');
+    if (filtroFecha) {
+        filtroFecha.addEventListener('change', mostrarListaVentas);
+    }
+});
