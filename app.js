@@ -1136,3 +1136,94 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
+// Función para solicitar envío de caja
+async function solicitarEnvioCaja() {
+    if (!clienteActual) {
+        alert('Error: No hay cliente conectado');
+        return;
+    }
+    
+    var btnEnvia = document.getElementById('btn-envia-caja');
+    if (btnEnvia) {
+        btnEnvia.disabled = true;
+        btnEnvia.innerHTML = '<span class="btn-envia-icon">⏳</span><span class="btn-envia-text">Enviando...</span>';
+    }
+    
+    try {
+        var numero = clienteActual.numero;
+        var nombre = clienteActual.nombre || 'Cliente #' + numero;
+        
+        // Obtener fecha y hora actual
+        var ahora = new Date();
+        var fechaPeticion = ahora.getFullYear() + '-' + 
+            (ahora.getMonth() + 1).toString().padStart(2, '0') + '-' + 
+            ahora.getDate().toString().padStart(2, '0') + ' ' +
+            ahora.getHours().toString().padStart(2, '0') + ':' +
+            ahora.getMinutes().toString().padStart(2, '0') + ':' +
+            ahora.getSeconds().toString().padStart(2, '0');
+        
+        // Verificar si ya existe una petición para este número
+        var respCheck = await supabase
+            .from('peticiones_envio')
+            .select('*')
+            .eq('numero', numero);
+        
+        if (respCheck.error) {
+            throw new Error('Error verificando petición: ' + respCheck.error.message);
+        }
+        
+        if (respCheck.data && respCheck.data.length > 0) {
+            // Actualizar la petición existente
+            var respUpdate = await supabase
+                .from('peticiones_envio')
+                .update({
+                    nombre: nombre,
+                    fecha_peticion: fechaPeticion
+                })
+                .eq('numero', numero);
+            
+            if (respUpdate.error) {
+                throw new Error('Error actualizando petición: ' + respUpdate.error.message);
+            }
+        } else {
+            // Insertar nueva petición
+            var respInsert = await supabase
+                .from('peticiones_envio')
+                .insert({
+                    numero: numero,
+                    nombre: nombre,
+                    fecha_peticion: fechaPeticion
+                });
+            
+            if (respInsert.error) {
+                throw new Error('Error creando petición: ' + respInsert.error.message);
+            }
+        }
+        
+        // Éxito
+        if (btnEnvia) {
+            btnEnvia.innerHTML = '<span class="btn-envia-icon">✅</span><span class="btn-envia-text">¡Solicitud enviada!</span>';
+            btnEnvia.style.background = 'linear-gradient(135deg, var(--success) 0%, #00B85A 100%)';
+        }
+        
+        alert('✅ Tu solicitud de envío ha sido registrada.\n\nAparecerá en la lista de envíos pendientes.');
+        
+        // Restaurar botón después de 3 segundos
+        setTimeout(function() {
+            if (btnEnvia) {
+                btnEnvia.disabled = false;
+                btnEnvia.innerHTML = '<span class="btn-envia-icon">📦</span><span class="btn-envia-text">Envía mi caja</span>';
+                btnEnvia.style.background = 'linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%)';
+            }
+        }, 3000);
+        
+    } catch (err) {
+        console.error('Error solicitando envío:', err);
+        alert('❌ Error al enviar la solicitud: ' + (err.message || 'Error desconocido'));
+        
+        if (btnEnvia) {
+            btnEnvia.disabled = false;
+            btnEnvia.innerHTML = '<span class="btn-envia-icon">📦</span><span class="btn-envia-text">Envía mi caja</span>';
+        }
+    }
+}
