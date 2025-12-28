@@ -1188,51 +1188,28 @@ async function solicitarEnvioCaja() {
             ahora.getMinutes().toString().padStart(2, '0') + ':' +
             ahora.getSeconds().toString().padStart(2, '0');
         
-        // Verificar si ya existe una petición para este número
-        console.log('🔍 Verificando peticiones existentes...');
-        var respCheck = await supabase
+        // Estrategia: Intentar actualizar primero, si no existe, insertar
+        // Si insert falla por duplicado, actualizar de nuevo
+        console.log('🔄 Intentando actualizar petición existente...');
+        var respUpdate = await supabase
             .from('peticiones_envio')
-            .select('*')
+            .update({
+                nombre: nombre,
+                fecha_peticion: fechaPeticion
+            })
             .eq('numero', numero);
         
-        console.log('📊 Respuesta check:', respCheck);
+        console.log('📊 Respuesta update:', respUpdate);
         
-        if (respCheck.error) {
-            console.error('❌ Error verificando:', respCheck.error);
-            // Si el error es 404 o "does not exist", la tabla no existe
-            if (respCheck.error.message && (respCheck.error.message.includes('does not exist') || respCheck.error.message.includes('relation') || respCheck.error.code === 'PGRST116')) {
-                throw new Error('La tabla "peticiones_envio" no existe en Supabase. Contacta con el administrador.');
-            }
-            // Si es error de permisos
-            if (respCheck.error.code === '42501' || respCheck.error.message.includes('permission')) {
-                throw new Error('No tienes permisos para realizar esta acción. Contacta con el administrador.');
-            }
-            throw new Error('Error verificando petición: ' + respCheck.error.message);
-        }
-        
-        if (respCheck.data && respCheck.data.length > 0) {
-            // Actualizar la petición existente
-            console.log('🔄 Actualizando petición existente...');
-            var respUpdate = await supabase
-                .from('peticiones_envio')
-                .update({
-                    nombre: nombre,
-                    fecha_peticion: fechaPeticion
-                })
-                .eq('numero', numero);
+        if (respUpdate.error) {
+            // Error al actualizar - puede ser que no exista o error de permisos
+            console.log('⚠️ Update falló, intentando insertar...');
             
-            console.log('📊 Respuesta update:', respUpdate);
-            
-            if (respUpdate.error) {
-                console.error('❌ Error actualizando:', respUpdate.error);
-                if (respUpdate.error.code === '42501' || respUpdate.error.message.includes('permission')) {
-                    throw new Error('No tienes permisos para actualizar peticiones. Contacta con el administrador.');
-                }
-                throw new Error('Error actualizando petición: ' + respUpdate.error.message);
+            if (respUpdate.error.code === '42501' || respUpdate.error.message.includes('permission')) {
+                throw new Error('No tienes permisos para actualizar peticiones. Contacta con el administrador.');
             }
-            console.log('✅ Petición actualizada correctamente');
-        } else {
-            // Insertar nueva petición
+            
+            // Intentar insertar (puede que no exista)
             console.log('➕ Insertando nueva petición...');
             var respInsert = await supabase
                 .from('peticiones_envio')
@@ -1246,15 +1223,45 @@ async function solicitarEnvioCaja() {
             
             if (respInsert.error) {
                 console.error('❌ Error insertando:', respInsert.error);
-                if (respInsert.error.code === '42501' || respInsert.error.message.includes('permission')) {
-                    throw new Error('No tienes permisos para crear peticiones. Contacta con el administrador.');
+                
+                // Si es error de clave duplicada, significa que existe pero el update falló
+                // Intentar actualizar de nuevo
+                var errorMsg = respInsert.error.message || '';
+                var isDuplicateKey = errorMsg.includes('duplicate key') || 
+                                    errorMsg.includes('unique constraint') || 
+                                    errorMsg.includes('pkey') ||
+                                    errorMsg.includes('violates unique constraint');
+                
+                if (isDuplicateKey) {
+                    console.log('🔄 Clave duplicada detectada, actualizando de nuevo...');
+                    var respUpdate2 = await supabase
+                        .from('peticiones_envio')
+                        .update({
+                            nombre: nombre,
+                            fecha_peticion: fechaPeticion
+                        })
+                        .eq('numero', numero);
+                    
+                    if (respUpdate2.error) {
+                        throw new Error('Error actualizando petición: ' + respUpdate2.error.message);
+                    }
+                    console.log('✅ Petición actualizada correctamente (después de detectar duplicado)');
+                } else {
+                    // Otro tipo de error
+                    if (respInsert.error.code === '42501' || respInsert.error.message.includes('permission')) {
+                        throw new Error('No tienes permisos para crear peticiones. Contacta con el administrador.');
+                    }
+                    if (respInsert.error.message && respInsert.error.message.includes('does not exist')) {
+                        throw new Error('La tabla "peticiones_envio" no existe. Contacta con el administrador.');
+                    }
+                    throw new Error('Error creando petición: ' + respInsert.error.message);
                 }
-                if (respInsert.error.message && respInsert.error.message.includes('does not exist')) {
-                    throw new Error('La tabla "peticiones_envio" no existe. Contacta con el administrador.');
-                }
-                throw new Error('Error creando petición: ' + respInsert.error.message);
+            } else {
+                console.log('✅ Petición creada correctamente');
             }
-            console.log('✅ Petición creada correctamente');
+        } else {
+            // Update exitoso
+            console.log('✅ Petición actualizada correctamente');
         }
         
         // Éxito
