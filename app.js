@@ -1134,14 +1134,38 @@ document.addEventListener('DOMContentLoaded', function() {
     if (filtroFecha) {
         filtroFecha.addEventListener('change', mostrarListaVentas);
     }
+    
+    // Conectar el botón de envío de caja (por si el onclick no funciona)
+    var btnEnviaCaja = document.getElementById('btn-envia-caja');
+    if (btnEnviaCaja) {
+        console.log('✅ Botón "Envía mi caja" encontrado y conectado');
+        btnEnviaCaja.addEventListener('click', function(e) {
+            e.preventDefault();
+            console.log('🖱️ Click en botón "Envía mi caja"');
+            solicitarEnvioCaja();
+        });
+    } else {
+        console.warn('⚠️ Botón "Envía mi caja" no encontrado en el DOM');
+    }
 });
 
 // Función para solicitar envío de caja
 async function solicitarEnvioCaja() {
+    console.log('🔵 solicitarEnvioCaja() llamada');
+    
     if (!clienteActual) {
+        console.error('❌ No hay clienteActual');
         alert('Error: No hay cliente conectado');
         return;
     }
+    
+    if (!supabase) {
+        console.error('❌ Supabase no está disponible');
+        alert('Error: No se pudo conectar con el servidor. Por favor, recarga la página.');
+        return;
+    }
+    
+    console.log('✅ Cliente actual:', clienteActual.numero, clienteActual.nombre);
     
     var btnEnvia = document.getElementById('btn-envia-caja');
     if (btnEnvia) {
@@ -1153,6 +1177,8 @@ async function solicitarEnvioCaja() {
         var numero = clienteActual.numero;
         var nombre = clienteActual.nombre || 'Cliente #' + numero;
         
+        console.log('📦 Preparando petición para:', numero, nombre);
+        
         // Obtener fecha y hora actual
         var ahora = new Date();
         var fechaPeticion = ahora.getFullYear() + '-' + 
@@ -1163,17 +1189,30 @@ async function solicitarEnvioCaja() {
             ahora.getSeconds().toString().padStart(2, '0');
         
         // Verificar si ya existe una petición para este número
+        console.log('🔍 Verificando peticiones existentes...');
         var respCheck = await supabase
             .from('peticiones_envio')
             .select('*')
             .eq('numero', numero);
         
+        console.log('📊 Respuesta check:', respCheck);
+        
         if (respCheck.error) {
+            console.error('❌ Error verificando:', respCheck.error);
+            // Si el error es 404 o "does not exist", la tabla no existe
+            if (respCheck.error.message && (respCheck.error.message.includes('does not exist') || respCheck.error.message.includes('relation') || respCheck.error.code === 'PGRST116')) {
+                throw new Error('La tabla "peticiones_envio" no existe en Supabase. Contacta con el administrador.');
+            }
+            // Si es error de permisos
+            if (respCheck.error.code === '42501' || respCheck.error.message.includes('permission')) {
+                throw new Error('No tienes permisos para realizar esta acción. Contacta con el administrador.');
+            }
             throw new Error('Error verificando petición: ' + respCheck.error.message);
         }
         
         if (respCheck.data && respCheck.data.length > 0) {
             // Actualizar la petición existente
+            console.log('🔄 Actualizando petición existente...');
             var respUpdate = await supabase
                 .from('peticiones_envio')
                 .update({
@@ -1182,11 +1221,19 @@ async function solicitarEnvioCaja() {
                 })
                 .eq('numero', numero);
             
+            console.log('📊 Respuesta update:', respUpdate);
+            
             if (respUpdate.error) {
+                console.error('❌ Error actualizando:', respUpdate.error);
+                if (respUpdate.error.code === '42501' || respUpdate.error.message.includes('permission')) {
+                    throw new Error('No tienes permisos para actualizar peticiones. Contacta con el administrador.');
+                }
                 throw new Error('Error actualizando petición: ' + respUpdate.error.message);
             }
+            console.log('✅ Petición actualizada correctamente');
         } else {
             // Insertar nueva petición
+            console.log('➕ Insertando nueva petición...');
             var respInsert = await supabase
                 .from('peticiones_envio')
                 .insert({
@@ -1195,9 +1242,19 @@ async function solicitarEnvioCaja() {
                     fecha_peticion: fechaPeticion
                 });
             
+            console.log('📊 Respuesta insert:', respInsert);
+            
             if (respInsert.error) {
+                console.error('❌ Error insertando:', respInsert.error);
+                if (respInsert.error.code === '42501' || respInsert.error.message.includes('permission')) {
+                    throw new Error('No tienes permisos para crear peticiones. Contacta con el administrador.');
+                }
+                if (respInsert.error.message && respInsert.error.message.includes('does not exist')) {
+                    throw new Error('La tabla "peticiones_envio" no existe. Contacta con el administrador.');
+                }
                 throw new Error('Error creando petición: ' + respInsert.error.message);
             }
+            console.log('✅ Petición creada correctamente');
         }
         
         // Éxito
@@ -1218,8 +1275,9 @@ async function solicitarEnvioCaja() {
         }, 3000);
         
     } catch (err) {
-        console.error('Error solicitando envío:', err);
-        alert('❌ Error al enviar la solicitud: ' + (err.message || 'Error desconocido'));
+        console.error('❌ Error completo solicitando envío:', err);
+        console.error('❌ Stack trace:', err.stack);
+        alert('❌ Error al enviar la solicitud: ' + (err.message || 'Error desconocido') + '\n\nAbre la consola (F12) para más detalles.');
         
         if (btnEnvia) {
             btnEnvia.disabled = false;
@@ -1227,3 +1285,6 @@ async function solicitarEnvioCaja() {
         }
     }
 }
+
+// Asegurar que la función esté disponible globalmente
+window.solicitarEnvioCaja = solicitarEnvioCaja;
