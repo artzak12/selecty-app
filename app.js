@@ -1153,6 +1153,13 @@ document.addEventListener('DOMContentLoaded', function() {
 async function solicitarEnvioCaja() {
     console.log('🔵 solicitarEnvioCaja() llamada');
     
+    // Doble confirmación antes de enviar
+    var confirmar = confirm('📦 ¿Confirma que deseas enviar tu caja?\n\nTu solicitud aparecerá en la lista de envíos pendientes.');
+    if (!confirmar) {
+        console.log('❌ Usuario canceló la solicitud de envío');
+        return; // El usuario canceló, no hacer nada
+    }
+    
     if (!clienteActual) {
         console.error('❌ No hay clienteActual');
         alert('Error: No hay cliente conectado');
