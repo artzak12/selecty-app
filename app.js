@@ -80,6 +80,238 @@ let todosLosBonos = [];
 let isAdmin = false;
 let clienteEditando = null;
 
+// ══════════════════════════════════════════════════════════════════════════════
+// SISTEMA DE NOTIFICACIONES
+// ══════════════════════════════════════════════════════════════════════════════
+let estadoAnterior = {
+    bonos: [],
+    ventas: [],
+    ultimaCompra: null
+};
+let intervaloNotificaciones = null;
+let intervaloRecordatorioLive = null;
+let recordatorioLiveEnviado = false;
+let recordatorio7DiasEnviado = false;
+
+// ══════════════════════════════════════════════════════════════════════════════
+// FUNCIONES DE NOTIFICACIONES
+// ══════════════════════════════════════════════════════════════════════════════
+
+// Solicitar permisos de notificaciones
+async function solicitarPermisosNotificaciones() {
+    if (!('Notification' in window)) {
+        console.log('Este navegador no soporta notificaciones');
+        return false;
+    }
+    
+    if (Notification.permission === 'granted') {
+        return true;
+    }
+    
+    if (Notification.permission !== 'denied') {
+        var permission = await Notification.requestPermission();
+        return permission === 'granted';
+    }
+    
+    return false;
+}
+
+// Enviar notificación
+function enviarNotificacion(titulo, mensaje, icono = '📦') {
+    if (Notification.permission === 'granted') {
+        var notification = new Notification(titulo, {
+            body: mensaje,
+            icon: '/icon-192.png',
+            badge: '/icon-192.png',
+            tag: 'selecty-notification',
+            requireInteraction: false
+        });
+        
+        // Cerrar automáticamente después de 5 segundos
+        setTimeout(function() {
+            notification.close();
+        }, 5000);
+        
+        // Hacer sonido (opcional)
+        try {
+            var audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBTGH0fPTgjMGHm7A7+OZURE');
+            audio.play().catch(function() {});
+        } catch (e) {}
+    }
+}
+
+// Verificar cambios y enviar notificaciones
+async function verificarCambiosYNotificar() {
+    if (!clienteActual || isAdmin) return;
+    
+    try {
+        // 1. Verificar nuevos bonos
+        var respBonos = await supabase
+            .from('log_bonos')
+            .select('*')
+            .eq('numero', clienteActual.numero)
+            .order('fecha', { ascending: false })
+            .order('hora', { ascending: false })
+            .limit(5);
+        
+        if (respBonos.data && respBonos.data.length > 0) {
+            var bonosNuevos = respBonos.data.filter(function(bono) {
+                // Verificar si es un bono nuevo comparando con el estado anterior
+                var existe = estadoAnterior.bonos.some(function(b) {
+                    return b.id === bono.id;
+                });
+                return !existe;
+            });
+            
+            if (bonosNuevos.length > 0) {
+                var ultimoBono = bonosNuevos[0];
+                var importe = parseFloat(ultimoBono.importe) || 0;
+                enviarNotificacion(
+                    '💰 ¡Nuevo bono añadido!',
+                    'Se ha añadido ' + importe.toFixed(0) + '€ a tu saldo disponible',
+                    '💰'
+                );
+                // Actualizar estado anterior
+                estadoAnterior.bonos = respBonos.data.slice(0, 5);
+            }
+        }
+        
+        // 2. Verificar nuevas ventas/artículos
+        var respVentas = await supabase
+            .from('ventas')
+            .select('*')
+            .eq('numero_cliente', clienteActual.numero)
+            .order('fecha', { ascending: false })
+            .order('hora', { ascending: false })
+            .limit(10);
+        
+        if (respVentas.data && respVentas.data.length > 0) {
+            var ventasNuevas = respVentas.data.filter(function(venta) {
+                // Verificar si es una venta nueva
+                var existe = estadoAnterior.ventas.some(function(v) {
+                    return v.id === venta.id;
+                });
+                return !existe;
+            });
+            
+            if (ventasNuevas.length > 0) {
+                var ultimaVenta = ventasNuevas[0];
+                var descripcion = ultimaVenta.descripcion || 'Nuevo artículo';
+                var precio = parseFloat(ultimaVenta.precio) || 0;
+                enviarNotificacion(
+                    '📦 ¡Nuevo artículo en tu caja!',
+                    descripcion + ' - ' + precio.toFixed(2) + '€',
+                    '📦'
+                );
+                // Actualizar estado anterior
+                estadoAnterior.ventas = respVentas.data.slice(0, 10);
+            }
+        }
+        
+        // 3. Verificar recordatorio de 7 días sin comprar
+        if (respVentas.data && respVentas.data.length > 0) {
+            var ultimaVenta = respVentas.data[0];
+            var fechaUltima = ultimaVenta.fecha;
+            if (fechaUltima) {
+                var fechaUltimaDate = new Date(fechaUltima + 'T00:00:00');
+                var ahora = new Date();
+                var diasSinComprar = Math.floor((ahora - fechaUltimaDate) / (1000 * 60 * 60 * 24));
+                
+                if (diasSinComprar >= 7 && !recordatorio7DiasEnviado) {
+                    enviarNotificacion(
+                        '⏰ Recordatorio',
+                        'Llevas ' + diasSinComprar + ' días sin comprar. ¡Participa en nuestros LIVES!',
+                        '⏰'
+                    );
+                    recordatorio7DiasEnviado = true;
+                } else if (diasSinComprar < 7) {
+                    recordatorio7DiasEnviado = false;
+                }
+            }
+        } else {
+            // Si no tiene ventas, verificar días desde registro (si es posible)
+            // Por ahora, solo notificar si tiene ventas previas
+        }
+        
+    } catch (err) {
+        console.error('Error verificando cambios:', err);
+    }
+}
+
+// Verificar recordatorio de LIVE (10 minutos antes)
+function verificarRecordatorioLive() {
+    if (!clienteActual || isAdmin) return;
+    
+    var proximo = getProximoLiveHorario();
+    if (!proximo || proximo.enVivo) {
+        recordatorioLiveEnviado = false;
+        return;
+    }
+    
+    var ahora = new Date();
+    var diff = proximo.fecha - ahora;
+    var minutosRestantes = Math.floor(diff / (1000 * 60));
+    
+    // Notificar 10 minutos antes
+    if (minutosRestantes <= 10 && minutosRestantes > 0 && !recordatorioLiveEnviado) {
+        var nombresDia = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+        var diaTexto = nombresDia[proximo.fecha.getDay()];
+        var horaTexto = proximo.horaInicio;
+        
+        enviarNotificacion(
+            '📺 LIVE empezando pronto',
+            proximo.nombre + ' empieza en ' + minutosRestantes + ' minutos (' + diaTexto + ' ' + horaTexto + ')',
+            '📺'
+        );
+        recordatorioLiveEnviado = true;
+    }
+    
+    // Resetear si ya pasó el LIVE
+    if (minutosRestantes < 0) {
+        recordatorioLiveEnviado = false;
+    }
+}
+
+// Iniciar sistema de notificaciones
+function iniciarSistemaNotificaciones() {
+    if (isAdmin) return;
+    
+    // Solicitar permisos al iniciar
+    solicitarPermisosNotificaciones();
+    
+    // Verificar cambios cada 30 segundos
+    if (intervaloNotificaciones) {
+        clearInterval(intervaloNotificaciones);
+    }
+    intervaloNotificaciones = setInterval(verificarCambiosYNotificar, 30000);
+    
+    // Verificar recordatorio LIVE cada minuto
+    if (intervaloRecordatorioLive) {
+        clearInterval(intervaloRecordatorioLive);
+    }
+    intervaloRecordatorioLive = setInterval(verificarRecordatorioLive, 60000);
+    
+    // Verificación inicial
+    setTimeout(function() {
+        verificarCambiosYNotificar();
+        verificarRecordatorioLive();
+    }, 5000);
+}
+
+// Detener sistema de notificaciones
+function detenerSistemaNotificaciones() {
+    if (intervaloNotificaciones) {
+        clearInterval(intervaloNotificaciones);
+        intervaloNotificaciones = null;
+    }
+    if (intervaloRecordatorioLive) {
+        clearInterval(intervaloRecordatorioLive);
+        intervaloRecordatorioLive = null;
+    }
+    recordatorioLiveEnviado = false;
+    recordatorio7DiasEnviado = false;
+}
+
 function showLoading() { 
     if (loadingOverlay) loadingOverlay.classList.add('active'); 
 }
@@ -167,6 +399,8 @@ async function recargarDatosCliente() {
         await cargarVentas();
         // Actualizar la pantalla
         mostrarDatosCliente();
+        // Verificar cambios y notificar (sin esperar)
+        verificarCambiosYNotificar();
     } catch (err) {
         console.error('Error al recargar:', err);
     }
@@ -196,6 +430,8 @@ async function login() {
                 var resp = await supabase.rpc('verificar_admin', { pass: password });
                 if (resp.data === true) {
                     isAdmin = true;
+                    // Detener notificaciones si estaba activo
+                    detenerSistemaNotificaciones();
                     await cargarDatosAdmin();
                     showScreen(adminScreen);
                 } else {
@@ -268,6 +504,31 @@ async function login() {
         mostrarDatosCliente();
         showScreen(mainScreen);
         hideLoading();
+        
+        // Iniciar sistema de notificaciones después del login
+        iniciarSistemaNotificaciones();
+        
+        // Guardar estado inicial para comparaciones
+        if (ventasCliente.length > 0) {
+            estadoAnterior.ventas = ventasCliente.slice(0, 10);
+            estadoAnterior.ultimaCompra = ventasCliente[0].fecha;
+        }
+        
+        // Cargar bonos iniciales
+        try {
+            var respBonos = await supabase
+                .from('log_bonos')
+                .select('*')
+                .eq('numero', clienteActual.numero)
+                .order('fecha', { ascending: false })
+                .order('hora', { ascending: false })
+                .limit(5);
+            if (respBonos.data) {
+                estadoAnterior.bonos = respBonos.data;
+            }
+        } catch (err) {
+            console.error('Error cargando bonos iniciales:', err);
+        }
     } catch (err) {
         console.error('Error en login:', err);
         loginError.textContent = 'Error al conectar: ' + (err.message || 'Error desconocido');
@@ -762,9 +1023,20 @@ async function cargarOfertas() {
 }
 
 function logout() {
+    // Detener sistema de notificaciones
+    detenerSistemaNotificaciones();
+    
     clienteActual = null; ventasCliente = []; isAdmin = false;
     localStorage.removeItem('clienteNumero'); localStorage.removeItem('clientePassword');
     inputNumero.value = ''; inputPassword.value = '';
+    
+    // Resetear estado anterior
+    estadoAnterior = {
+        bonos: [],
+        ventas: [],
+        ultimaCompra: null
+    };
+    
     showScreen(loginScreen);
 }
 
