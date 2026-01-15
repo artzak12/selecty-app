@@ -161,11 +161,50 @@ main { padding: 20px; max-width: 600px; margin: 0 auto; }
 .empty-state span { font-size: 14px; color: var(--text-muted); }
 
 .status-bar { position: fixed; bottom: 0; left: 0; right: 0; background: var(--bg-card); border-top: 1px solid #333; padding: 16px 20px; display: flex; align-items: center; justify-content: center; gap: 10px; transition: all 0.3s ease; }
-.status-bar:hover { background: var(--bg-card-hover); }
-.status-bar:active { transform: scale(0.98); }
-.status-icon { font-size: 18px; }
-.status-text { font-size: 14px; color: var(--text-secondary); font-weight: 600; }
-.status-text strong { color: var(--primary); }
+.status-bar.btn-enviar-activo { 
+    background: var(--primary); 
+    border-top: none; 
+    box-shadow: 0 -4px 20px rgba(255, 215, 0, 0.3);
+}
+.status-bar.btn-enviar-activo:hover { 
+    background: var(--primary-dark); 
+    box-shadow: 0 -4px 25px rgba(255, 215, 0, 0.4);
+}
+.status-bar.btn-enviar-activo:active { 
+    transform: scale(0.98); 
+    background: var(--primary-dark); 
+}
+.status-bar.btn-enviar-inactivo { 
+    background: var(--bg-card); 
+    opacity: 0.6; 
+}
+.status-icon { 
+    font-size: 22px; 
+    line-height: 1;
+}
+.status-bar.btn-enviar-activo .status-icon {
+    display: inline-block;
+}
+.status-bar.btn-enviar-inactivo .status-icon {
+    display: none;
+}
+.status-bar.btn-enviar-activo .status-text { 
+    color: #000; 
+    font-weight: 700; 
+    font-size: 15px; 
+}
+.status-bar.btn-enviar-inactivo .status-text { 
+    color: var(--text-secondary); 
+    font-weight: 600; 
+}
+.status-text { 
+    font-size: 14px; 
+    color: var(--text-secondary); 
+    font-weight: 600; 
+}
+.status-text strong { 
+    color: var(--primary); 
+}
 
 .loading-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.9); display: none; align-items: center; justify-content: center; flex-direction: column; gap: 20px; z-index: 9999; }
 .loading-overlay.active { display: flex; }
