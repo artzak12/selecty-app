@@ -328,16 +328,22 @@ function mostrarDatosCliente() {
     // Actualizar botón de envío
     var statusBar = document.getElementById('status-envio');
     var statusText = statusBar.querySelector('.status-text');
+    var statusIcon = statusBar.querySelector('.status-icon');
     if (pendientes.length > 0) {
-        statusText.innerHTML = '📦 Envía mi caja (' + pendientes.length + ' artículo' + (pendientes.length > 1 ? 's' : '') + ')';
+        // Mostrar solo texto sin emoji duplicado (el icono ya está en el HTML)
+        statusText.innerHTML = 'Envía mi caja (' + pendientes.length + ' artículo' + (pendientes.length > 1 ? 's' : '') + ')';
+        statusBar.classList.add('btn-enviar-activo');
+        statusBar.classList.remove('btn-enviar-inactivo');
         statusBar.style.cursor = 'pointer';
-        statusBar.style.opacity = '1';
         statusBar.onclick = enviarMiCaja;
+        if (statusIcon) statusIcon.style.display = 'inline';
     } else {
         statusText.innerHTML = 'Estado de tu caja: <strong>Vacía</strong>';
+        statusBar.classList.remove('btn-enviar-activo');
+        statusBar.classList.add('btn-enviar-inactivo');
         statusBar.style.cursor = 'default';
-        statusBar.style.opacity = '0.6';
         statusBar.onclick = null;
+        if (statusIcon) statusIcon.style.display = 'none';
     }
     
     renderizarListas();
@@ -1269,14 +1275,14 @@ async function enviarMiCaja() {
             alert('✅ Petición de envío creada.\n\nTu caja aparecerá en la lista de envíos.');
         }
         
-        // Actualizar estado visual
+        // Actualizar estado visual (feedback visual temporal)
         var statusBar = document.getElementById('status-envio');
         if (statusBar) {
             statusBar.style.background = 'var(--success)';
-            statusBar.style.opacity = '0.8';
             setTimeout(function() {
                 statusBar.style.background = '';
-                statusBar.style.opacity = '';
+                // Recargar datos para actualizar el estado
+                recargarDatosCliente();
             }, 2000);
         }
         
