@@ -97,6 +97,8 @@ body {
 .footer-text { margin-top: 32px; font-size: 14px; color: var(--text-secondary); }
 .footer-text a { color: var(--primary); text-decoration: none; font-weight: 600; }
 
+#main-screen { padding-bottom: 70px; }
+
 header { background: var(--bg-card); padding: 16px 20px; border-bottom: 1px solid #333; position: sticky; top: 0; z-index: 100; }
 .header-content { display: flex; justify-content: space-between; align-items: center; max-width: 600px; margin: 0 auto; }
 .user-info { display: flex; align-items: center; gap: 12px; }
@@ -158,35 +160,11 @@ main { padding: 20px; max-width: 600px; margin: 0 auto; }
 .empty-state p { font-size: 16px; font-weight: 600; margin-bottom: 8px; }
 .empty-state span { font-size: 14px; color: var(--text-muted); }
 
-.status-bar { position: fixed; bottom: 0; left: 0; right: 0; background: var(--bg-card); border-top: 1px solid #333; padding: 16px 20px; display: flex; align-items: center; justify-content: center; gap: 10px; }
-
-.envio-button-container { position: fixed; bottom: 80px; left: 0; right: 0; padding: 16px 20px; background: transparent; z-index: 10; }
-#main-screen { padding-bottom: 200px; } /* Espacio para el botón y la barra de estado */
-.btn-envia-caja {
-    width: 100%;
-    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-    color: #000;
-    border: none;
-    border-radius: var(--border-radius);
-    padding: 18px 24px;
-    font-size: 18px;
-    font-weight: 700;
-    font-family: 'Poppins', sans-serif;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 12px;
-    cursor: pointer;
-    box-shadow: 0 8px 25px rgba(255, 215, 0, 0.3);
-    transition: all 0.3s ease;
-}
-.btn-envia-caja:hover { transform: translateY(-2px); box-shadow: 0 12px 35px rgba(255, 215, 0, 0.4); }
-.btn-envia-caja:active { transform: translateY(0); }
-.btn-envia-caja:disabled { opacity: 0.6; cursor: not-allowed; }
-.btn-envia-icon { font-size: 24px; }
-.btn-envia-text { font-weight: 700; }
+.status-bar { position: fixed; bottom: 0; left: 0; right: 0; background: var(--bg-card); border-top: 1px solid #333; padding: 16px 20px; display: flex; align-items: center; justify-content: center; gap: 10px; transition: all 0.3s ease; }
+.status-bar:hover { background: var(--bg-card-hover); }
+.status-bar:active { transform: scale(0.98); }
 .status-icon { font-size: 18px; }
-.status-text { font-size: 14px; color: var(--text-secondary); }
+.status-text { font-size: 14px; color: var(--text-secondary); font-weight: 600; }
 .status-text strong { color: var(--primary); }
 
 .loading-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.9); display: none; align-items: center; justify-content: center; flex-direction: column; gap: 20px; z-index: 9999; }
