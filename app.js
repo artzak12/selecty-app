@@ -278,9 +278,26 @@ async function login() {
 async function cargarVentas() {
     if (!clienteActual) return;
     try {
-        var resp = await supabase.from('ventas').select('*').eq('numero_cliente', clienteActual.numero).order('fecha', { ascending: false });
-        if (!resp.error && resp.data) ventasCliente = resp.data;
-    } catch (err) {}
+        // Cargar ventas ordenadas por fecha DESC y hora DESC (más reciente arriba)
+        var resp = await supabase
+            .from('ventas')
+            .select('*')
+            .eq('numero_cliente', clienteActual.numero)
+            .order('fecha', { ascending: false })
+            .order('hora', { ascending: false });
+        
+        if (!resp.error && resp.data) {
+            ventasCliente = resp.data;
+            // Ordenar manualmente por fecha+hora (más reciente primero) por si acaso
+            ventasCliente.sort(function(a, b) {
+                var fechaA = (a.fecha || '') + ' ' + (a.hora || '00:00:00');
+                var fechaB = (b.fecha || '') + ' ' + (b.hora || '00:00:00');
+                return fechaB.localeCompare(fechaA);
+            });
+        }
+    } catch (err) {
+        console.error('Error cargando ventas:', err);
+    }
 }
 
 function mostrarDatosCliente() {
@@ -307,7 +324,22 @@ function mostrarDatosCliente() {
     document.getElementById('stat-en-caja').textContent = pendientes.length;
     document.getElementById('stat-total-compras').textContent = ventasCliente.length;
     if (ventasCliente.length > 0) document.getElementById('stat-ultima-compra').textContent = formatDate(ventasCliente[0].fecha);
-    document.getElementById('estado-caja').textContent = pendientes.length > 0 ? pendientes.length + ' pendientes' : 'Vacia';
+    
+    // Actualizar botón de envío
+    var statusBar = document.getElementById('status-envio');
+    var statusText = statusBar.querySelector('.status-text');
+    if (pendientes.length > 0) {
+        statusText.innerHTML = '📦 Envía mi caja (' + pendientes.length + ' artículo' + (pendientes.length > 1 ? 's' : '') + ')';
+        statusBar.style.cursor = 'pointer';
+        statusBar.style.opacity = '1';
+        statusBar.onclick = enviarMiCaja;
+    } else {
+        statusText.innerHTML = 'Estado de tu caja: <strong>Vacía</strong>';
+        statusBar.style.cursor = 'default';
+        statusBar.style.opacity = '0.6';
+        statusBar.onclick = null;
+    }
+    
     renderizarListas();
     cargarBonosCliente();
     cargarProximoLive();
@@ -316,9 +348,22 @@ function mostrarDatosCliente() {
 
 function renderizarListas() {
     // Pendientes = SIN seguimiento (no enviados)
+    // Ordenar por fecha+hora descendente (más reciente arriba)
     var pendientes = ventasCliente.filter(function(v) { return !v.seguimiento; });
+    pendientes.sort(function(a, b) {
+        var fechaA = (a.fecha || '') + ' ' + (a.hora || '00:00:00');
+        var fechaB = (b.fecha || '') + ' ' + (b.hora || '00:00:00');
+        return fechaB.localeCompare(fechaA);
+    });
+    
     // Enviados = CON seguimiento
+    // Ordenar por fecha+hora descendente (más reciente arriba)
     var enviados = ventasCliente.filter(function(v) { return v.seguimiento; });
+    enviados.sort(function(a, b) {
+        var fechaA = (a.fecha || '') + ' ' + (a.hora || '00:00:00');
+        var fechaB = (b.fecha || '') + ' ' + (b.hora || '00:00:00');
+        return fechaB.localeCompare(fechaA);
+    });
     
     var listaEnCaja = document.getElementById('lista-en-caja');
     var emptyCaja = document.getElementById('empty-caja');
@@ -328,7 +373,11 @@ function renderizarListas() {
         var html = '';
         for (var i = 0; i < pendientes.length; i++) {
             var v = pendientes[i];
-            html += '<div class="item-card"><div class="item-info"><div class="item-name">' + (v.descripcion || 'Articulo') + '</div><div class="item-date">' + formatDateFull(v.fecha) + '</div></div><div class="item-status"><span class="item-price">' + formatMoney(v.precio) + '</span><span class="status-badge pendiente">En caja</span></div></div>';
+            var fechaHora = formatDateFull(v.fecha);
+            if (v.hora) {
+                fechaHora += ' ' + formatHora(v.hora);
+            }
+            html += '<div class="item-card"><div class="item-info"><div class="item-name">' + (v.descripcion || 'Articulo') + '</div><div class="item-date">' + fechaHora + '</div></div><div class="item-status"><span class="item-price">' + formatMoney(v.precio) + '</span><span class="status-badge pendiente">En caja</span></div></div>';
         }
         listaEnCaja.innerHTML = html;
     }
@@ -340,11 +389,15 @@ function renderizarListas() {
         var html = '';
         for (var i = 0; i < enviados.length; i++) {
             var v = enviados[i];
+            var fechaHora = formatDateFull(v.fecha);
+            if (v.hora) {
+                fechaHora += ' ' + formatHora(v.hora);
+            }
             var seguimientoHtml = '';
             if (v.seguimiento) {
                 seguimientoHtml = '<a href="https://mygls.gls-spain.es/e/' + v.seguimiento + '/03130" target="_blank" class="seguimiento-link">📦 ' + v.seguimiento + '</a>';
             }
-            html += '<div class="item-card enviado-card"><div class="item-info"><div class="item-name">' + (v.descripcion || 'Articulo') + '</div><div class="item-date">' + formatDateFull(v.fecha) + '</div>' + seguimientoHtml + '</div><div class="item-status"><span class="item-price">' + formatMoney(v.precio) + '</span><span class="status-badge enviado">Enviado</span></div></div>';
+            html += '<div class="item-card enviado-card"><div class="item-info"><div class="item-name">' + (v.descripcion || 'Articulo') + '</div><div class="item-date">' + fechaHora + '</div>' + seguimientoHtml + '</div><div class="item-status"><span class="item-price">' + formatMoney(v.precio) + '</span><span class="status-badge enviado">Enviado</span></div></div>';
         }
         listaHistorial.innerHTML = html;
     }
@@ -1134,171 +1187,103 @@ document.addEventListener('DOMContentLoaded', function() {
     if (filtroFecha) {
         filtroFecha.addEventListener('change', mostrarListaVentas);
     }
-    
-    // Conectar el botón de envío de caja (por si el onclick no funciona)
-    var btnEnviaCaja = document.getElementById('btn-envia-caja');
-    if (btnEnviaCaja) {
-        console.log('✅ Botón "Envía mi caja" encontrado y conectado');
-        btnEnviaCaja.addEventListener('click', function(e) {
-            e.preventDefault();
-            console.log('🖱️ Click en botón "Envía mi caja"');
-            solicitarEnvioCaja();
-        });
-    } else {
-        console.warn('⚠️ Botón "Envía mi caja" no encontrado en el DOM');
-    }
 });
 
-// Función para solicitar envío de caja
-async function solicitarEnvioCaja() {
-    console.log('🔵 solicitarEnvioCaja() llamada');
-    
-    // Doble confirmación antes de enviar
-    var confirmar = confirm('📦 ¿Confirma que deseas enviar tu caja?\n\nTu solicitud aparecerá en la lista de envíos pendientes.');
-    if (!confirmar) {
-        console.log('❌ Usuario canceló la solicitud de envío');
-        return; // El usuario canceló, no hacer nada
-    }
-    
+// Función para enviar mi caja (crear petición de envío)
+async function enviarMiCaja() {
     if (!clienteActual) {
-        console.error('❌ No hay clienteActual');
-        alert('Error: No hay cliente conectado');
+        alert('Error: No hay sesión activa');
         return;
     }
     
-    if (!supabase) {
-        console.error('❌ Supabase no está disponible');
-        alert('Error: No se pudo conectar con el servidor. Por favor, recarga la página.');
+    // Verificar que haya artículos pendientes
+    var pendientes = ventasCliente.filter(function(v) { return !v.seguimiento; });
+    if (pendientes.length === 0) {
+        alert('Tu caja ya está vacía. No hay artículos pendientes de envío.');
         return;
     }
     
-    console.log('✅ Cliente actual:', clienteActual.numero, clienteActual.nombre);
-    
-    var btnEnvia = document.getElementById('btn-envia-caja');
-    if (btnEnvia) {
-        btnEnvia.disabled = true;
-        btnEnvia.innerHTML = '<span class="btn-envia-icon">⏳</span><span class="btn-envia-text">Enviando...</span>';
+    // Confirmar acción
+    if (!confirm('¿Enviar tu caja ahora?\n\nSe creará una petición de envío con ' + pendientes.length + ' artículo(s) pendiente(s).')) {
+        return;
     }
     
     try {
-        var numero = clienteActual.numero;
-        var nombre = clienteActual.nombre || 'Cliente #' + numero;
-        
-        console.log('📦 Preparando petición para:', numero, nombre);
+        showLoading();
         
         // Obtener fecha y hora actual
         var ahora = new Date();
-        var fechaPeticion = ahora.getFullYear() + '-' + 
-            (ahora.getMonth() + 1).toString().padStart(2, '0') + '-' + 
-            ahora.getDate().toString().padStart(2, '0') + ' ' +
-            ahora.getHours().toString().padStart(2, '0') + ':' +
-            ahora.getMinutes().toString().padStart(2, '0') + ':' +
-            ahora.getSeconds().toString().padStart(2, '0');
+        var fecha = ahora.getFullYear() + '-' + 
+                   (ahora.getMonth() + 1).toString().padStart(2, '0') + '-' + 
+                   ahora.getDate().toString().padStart(2, '0');
+        var hora = ahora.getHours().toString().padStart(2, '0') + ':' + 
+                  ahora.getMinutes().toString().padStart(2, '0');
+        var fecha_peticion = fecha + ' ' + hora;
         
-        // Estrategia: Intentar actualizar primero, si no existe, insertar
-        // Si insert falla por duplicado, actualizar de nuevo
-        console.log('🔄 Intentando actualizar petición existente...');
-        var respUpdate = await supabase
+        var numero = clienteActual.numero;
+        var nombre = clienteActual.nombre || 'Cliente #' + numero;
+        
+        // Verificar si ya existe una petición para este número
+        var respCheck = await supabase
             .from('peticiones_envio')
-            .update({
-                nombre: nombre,
-                fecha_peticion: fechaPeticion
-            })
-            .eq('numero', numero);
+            .select('numero')
+            .eq('numero', numero)
+            .maybeSingle();
         
-        console.log('📊 Respuesta update:', respUpdate);
-        
-        if (respUpdate.error) {
-            // Error al actualizar - puede ser que no exista o error de permisos
-            console.log('⚠️ Update falló, intentando insertar...');
+        if (respCheck.data) {
+            // Actualizar petición existente
+            var respUpdate = await supabase
+                .from('peticiones_envio')
+                .update({
+                    nombre: nombre,
+                    fecha_peticion: fecha_peticion
+                })
+                .eq('numero', numero);
             
-            if (respUpdate.error.code === '42501' || respUpdate.error.message.includes('permission')) {
-                throw new Error('No tienes permisos para actualizar peticiones. Contacta con el administrador.');
+            if (respUpdate.error) {
+                throw new Error('Error actualizando petición: ' + (respUpdate.error.message || 'Error desconocido'));
             }
             
-            // Intentar insertar (puede que no exista)
-            console.log('➕ Insertando nueva petición...');
+            alert('✅ Petición de envío actualizada.\n\nTu caja aparecerá en la lista de envíos.');
+        } else {
+            // Crear nueva petición
             var respInsert = await supabase
                 .from('peticiones_envio')
                 .insert({
                     numero: numero,
                     nombre: nombre,
-                    fecha_peticion: fechaPeticion
+                    fecha_peticion: fecha_peticion
                 });
             
-            console.log('📊 Respuesta insert:', respInsert);
-            
             if (respInsert.error) {
-                console.error('❌ Error insertando:', respInsert.error);
-                
-                // Si es error de clave duplicada, significa que existe pero el update falló
-                // Intentar actualizar de nuevo
-                var errorMsg = respInsert.error.message || '';
-                var isDuplicateKey = errorMsg.includes('duplicate key') || 
-                                    errorMsg.includes('unique constraint') || 
-                                    errorMsg.includes('pkey') ||
-                                    errorMsg.includes('violates unique constraint');
-                
-                if (isDuplicateKey) {
-                    console.log('🔄 Clave duplicada detectada, actualizando de nuevo...');
-                    var respUpdate2 = await supabase
-                        .from('peticiones_envio')
-                        .update({
-                            nombre: nombre,
-                            fecha_peticion: fechaPeticion
-                        })
-                        .eq('numero', numero);
-                    
-                    if (respUpdate2.error) {
-                        throw new Error('Error actualizando petición: ' + respUpdate2.error.message);
-                    }
-                    console.log('✅ Petición actualizada correctamente (después de detectar duplicado)');
+                // Si la tabla no existe, mostrar error descriptivo
+                if (respInsert.error.code === 'PGRST116' || respInsert.error.message.includes('does not exist')) {
+                    alert('❌ Error: La tabla "peticiones_envio" no existe en Supabase.\n\nContacta con el administrador.');
                 } else {
-                    // Otro tipo de error
-                    if (respInsert.error.code === '42501' || respInsert.error.message.includes('permission')) {
-                        throw new Error('No tienes permisos para crear peticiones. Contacta con el administrador.');
-                    }
-                    if (respInsert.error.message && respInsert.error.message.includes('does not exist')) {
-                        throw new Error('La tabla "peticiones_envio" no existe. Contacta con el administrador.');
-                    }
-                    throw new Error('Error creando petición: ' + respInsert.error.message);
+                    throw new Error('Error creando petición: ' + (respInsert.error.message || 'Error desconocido'));
                 }
-            } else {
-                console.log('✅ Petición creada correctamente');
+                hideLoading();
+                return;
             }
-        } else {
-            // Update exitoso
-            console.log('✅ Petición actualizada correctamente');
+            
+            alert('✅ Petición de envío creada.\n\nTu caja aparecerá en la lista de envíos.');
         }
         
-        // Éxito
-        if (btnEnvia) {
-            btnEnvia.innerHTML = '<span class="btn-envia-icon">✅</span><span class="btn-envia-text">¡Solicitud enviada!</span>';
-            btnEnvia.style.background = 'linear-gradient(135deg, var(--success) 0%, #00B85A 100%)';
+        // Actualizar estado visual
+        var statusBar = document.getElementById('status-envio');
+        if (statusBar) {
+            statusBar.style.background = 'var(--success)';
+            statusBar.style.opacity = '0.8';
+            setTimeout(function() {
+                statusBar.style.background = '';
+                statusBar.style.opacity = '';
+            }, 2000);
         }
-        
-        alert('✅ Tu solicitud de envío ha sido registrada.\n\nAparecerá en la lista de envíos pendientes.');
-        
-        // Restaurar botón después de 3 segundos
-        setTimeout(function() {
-            if (btnEnvia) {
-                btnEnvia.disabled = false;
-                btnEnvia.innerHTML = '<span class="btn-envia-icon">📦</span><span class="btn-envia-text">Envía mi caja</span>';
-                btnEnvia.style.background = 'linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%)';
-            }
-        }, 3000);
         
     } catch (err) {
-        console.error('❌ Error completo solicitando envío:', err);
-        console.error('❌ Stack trace:', err.stack);
-        alert('❌ Error al enviar la solicitud: ' + (err.message || 'Error desconocido') + '\n\nAbre la consola (F12) para más detalles.');
-        
-        if (btnEnvia) {
-            btnEnvia.disabled = false;
-            btnEnvia.innerHTML = '<span class="btn-envia-icon">📦</span><span class="btn-envia-text">Envía mi caja</span>';
-        }
+        console.error('Error enviando caja:', err);
+        alert('❌ Error al crear la petición de envío:\n\n' + (err.message || 'Error desconocido'));
+    } finally {
+        hideLoading();
     }
 }
-
-// Asegurar que la función esté disponible globalmente
-window.solicitarEnvioCaja = solicitarEnvioCaja;
