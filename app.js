@@ -1666,20 +1666,29 @@ function actualizarVistaPuntos() {
         };
     }
     
-    puntosDisponiblesEl.textContent = puntosCliente.puntos_disponibles || 0;
-    puntosAcumuladosEl.textContent = puntosCliente.puntos_acumulados || 0;
+    // Asegurar que los valores sean números
+    var puntosDisp = parseInt(puntosCliente.puntos_disponibles) || 0;
+    var puntosAcum = parseInt(puntosCliente.puntos_acumulados) || 0;
+    
+    puntosDisponiblesEl.textContent = puntosDisp;
+    puntosAcumuladosEl.textContent = puntosAcum;
     nivelActualEl.textContent = puntosCliente.nombre_nivel || '🌱 Novato';
     
     // Habilitar/deshabilitar botón de ruleta según puntos disponibles
-    var puntosDisponibles = puntosCliente.puntos_disponibles || 0;
+    var puntosDisponibles = puntosDisp;
+    
+    console.log('Puntos disponibles:', puntosDisponibles, 'Tipo:', typeof puntosDisponibles);
     
     if (puntosDisponibles >= 3) {
         btnRuleta.disabled = false;
+        btnRuleta.removeAttribute('disabled');
         btnRuleta.classList.remove('disabled');
         btnRuleta.style.opacity = '1';
         btnRuleta.style.cursor = 'pointer';
+        btnRuleta.onclick = girarRuleta; // Asegurar que el onclick esté asignado
     } else {
         btnRuleta.disabled = true;
+        btnRuleta.setAttribute('disabled', 'disabled');
         btnRuleta.classList.add('disabled');
         btnRuleta.style.opacity = '0.5';
         btnRuleta.style.cursor = 'not-allowed';
@@ -1710,9 +1719,11 @@ async function girarRuleta() {
         };
     }
     
-    var puntosDisponibles = puntosCliente.puntos_disponibles || 0;
+    var puntosDisponibles = parseInt(puntosCliente.puntos_disponibles) || 0;
+    console.log('Intentando girar ruleta. Puntos disponibles:', puntosDisponibles, 'Tipo:', typeof puntosDisponibles);
+    
     if (puntosDisponibles < 3) {
-        alert('❌ No tienes suficientes puntos.\n\nNecesitas 3 puntos para girar la ruleta.');
+        alert('❌ No tienes suficientes puntos.\n\nNecesitas 3 puntos para girar la ruleta.\n\nTienes: ' + puntosDisponibles + ' puntos');
         return;
     }
     
@@ -1763,18 +1774,20 @@ async function girarRuleta() {
             console.error('Error registrando tirada:', respTirada.error);
         }
         
-        // Actualizar puntos locales
+        // Actualizar puntos locales DESPUÉS de que se haya guardado en Supabase
         puntosCliente.puntos_disponibles = puntosNuevos;
         puntosCliente.giros_totales = girosTotales;
         
-        // Mostrar resultado
-        mostrarResultadoRuleta(premio);
+        // Mostrar animación de ruleta y resultado
+        mostrarAnimacionRuleta(premio);
         
-        // Actualizar vista
+        // Actualizar vista (sin recargar desde Supabase todavía)
         actualizarVistaPuntos();
         
-        // Recargar historial
-        cargarHistorialRuleta();
+        // Recargar historial después de un pequeño delay para asegurar que se guardó
+        setTimeout(function() {
+            cargarHistorialRuleta();
+        }, 500);
         
     } catch (err) {
         console.error('Error girando ruleta:', err);
@@ -1784,30 +1797,49 @@ async function girarRuleta() {
     }
 }
 
-// Mostrar resultado de la ruleta
-function mostrarResultadoRuleta(premio) {
+// Mostrar animación de ruleta y resultado
+function mostrarAnimacionRuleta(premio) {
     var resultadoDiv = document.getElementById('ruleta-resultado');
     var premioText = document.getElementById('ruleta-premio-text');
     
-    if (premio === 'NADA') {
-        premioText.innerHTML = '<span class="premio-nada">😔 No has ganado nada</span>';
-        premioText.className = 'ruleta-premio nada';
-    } else {
-        premioText.innerHTML = '<span class="premio-ganado">🎉 ¡Has ganado!</span><br><span class="premio-nombre">' + premio + '</span>';
-        premioText.className = 'ruleta-premio ganado';
+    // Ocultar botón de ruleta temporalmente
+    var btnRuleta = document.getElementById('btn-girar-ruleta');
+    if (btnRuleta) {
+        btnRuleta.style.display = 'none';
     }
     
+    // Mostrar animación de ruleta girando
     resultadoDiv.style.display = 'block';
+    premioText.innerHTML = '<div class="ruleta-girando">🎰</div><div class="ruleta-texto">Girando...</div>';
+    premioText.className = 'ruleta-premio girando';
     
-    // Enviar notificación
-    if (premio !== 'NADA') {
-        enviarNotificacion('🎰 ¡Premio en la ruleta!', 'Has ganado: ' + premio, '🎰');
-    }
+    // Simular giro de ruleta (2 segundos)
+    setTimeout(function() {
+        if (premio === 'NADA') {
+            premioText.innerHTML = '<span class="premio-nada">😔 No has ganado nada</span>';
+            premioText.className = 'ruleta-premio nada';
+        } else {
+            premioText.innerHTML = '<span class="premio-ganado">🎉 ¡Has ganado!</span><br><span class="premio-nombre">' + premio + '</span>';
+            premioText.className = 'ruleta-premio ganado';
+        }
+        
+        // Mostrar botón de nuevo
+        if (btnRuleta) {
+            btnRuleta.style.display = 'flex';
+        }
+        
+        // Enviar notificación
+        if (premio !== 'NADA') {
+            enviarNotificacion('🎰 ¡Premio en la ruleta!', 'Has ganado: ' + premio, '🎰');
+        }
+    }, 2000);
 }
 
 // Cerrar resultado de la ruleta
 function cerrarResultadoRuleta() {
     document.getElementById('ruleta-resultado').style.display = 'none';
+    // Recargar puntos desde Supabase para asegurar que están actualizados
+    cargarPuntosCliente();
 }
 
 // Cargar historial de tiradas de ruleta
@@ -1878,7 +1910,9 @@ function generarPremioAleatorio() {
         { premio: 'Tortuguita', probabilidad: 5.5 },
         { premio: 'Chuche', probabilidad: 5.5 },
         { premio: 'Panda', probabilidad: 5.5 },
-        { premio: 'Cacharrito', probabilidad: 5.5 }
+        { premio: 'Cacharrito', probabilidad: 5.5 },
+        // Ajustar para que sume 100% (faltan 1.8% - se añaden a NADA)
+        { premio: 'NADA', probabilidad: 1.8 }
     ];
     
     var premiosAcumulados = [];
