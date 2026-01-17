@@ -611,6 +611,8 @@ function mostrarDatosCliente() {
     cargarBonosCliente();
     cargarProximoLive();
     cargarOfertas();
+    cargarPuntosCliente(); // 🎯 NUEVO: Cargar puntos del cliente
+    cargarHistorialRuleta(); // 🎯 NUEVO: Cargar historial de ruleta
 }
 
 function renderizarListas() {
@@ -1564,4 +1566,270 @@ async function enviarMiCaja() {
     } finally {
         hideLoading();
     }
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// 🎰 SISTEMA DE PUNTOS Y RULETA
+// ══════════════════════════════════════════════════════════════════════════════
+
+let puntosCliente = null;
+
+// Cargar puntos del cliente desde Supabase
+async function cargarPuntosCliente() {
+    if (!clienteActual) return;
+    try {
+        var resp = await supabase
+            .from('puntos_clientes')
+            .select('*')
+            .eq('numero', clienteActual.numero)
+            .maybeSingle();
+        
+        if (resp.error) {
+            console.error('Error cargando puntos:', resp.error);
+            return;
+        }
+        
+        if (resp.data) {
+            puntosCliente = resp.data;
+        } else {
+            // Cliente no tiene puntos aún, crear valores por defecto
+            puntosCliente = {
+                numero: clienteActual.numero,
+                puntos_acumulados: 0,
+                puntos_disponibles: 0,
+                giros_totales: 0,
+                nivel_actual: 1,
+                nombre_nivel: '🌱 Novato'
+            };
+        }
+        
+        actualizarVistaPuntos();
+    } catch (err) {
+        console.error('Error cargando puntos:', err);
+    }
+}
+
+// Actualizar la vista de puntos
+function actualizarVistaPuntos() {
+    if (!puntosCliente) return;
+    
+    document.getElementById('puntos-disponibles').textContent = puntosCliente.puntos_disponibles || 0;
+    document.getElementById('puntos-acumulados').textContent = puntosCliente.puntos_acumulados || 0;
+    document.getElementById('nivel-actual').textContent = puntosCliente.nombre_nivel || '🌱 Novato';
+    
+    // Habilitar/deshabilitar botón de ruleta según puntos disponibles
+    var btnRuleta = document.getElementById('btn-girar-ruleta');
+    var puntosDisponibles = puntosCliente.puntos_disponibles || 0;
+    
+    if (puntosDisponibles >= 3) {
+        btnRuleta.disabled = false;
+        btnRuleta.classList.remove('disabled');
+        btnRuleta.style.opacity = '1';
+        btnRuleta.style.cursor = 'pointer';
+    } else {
+        btnRuleta.disabled = true;
+        btnRuleta.classList.add('disabled');
+        btnRuleta.style.opacity = '0.5';
+        btnRuleta.style.cursor = 'not-allowed';
+    }
+}
+
+// Girar la ruleta
+async function girarRuleta() {
+    if (!clienteActual || !puntosCliente) {
+        alert('❌ Error: No se pudo cargar la información del cliente');
+        return;
+    }
+    
+    var puntosDisponibles = puntosCliente.puntos_disponibles || 0;
+    if (puntosDisponibles < 3) {
+        alert('❌ No tienes suficientes puntos.\n\nNecesitas 3 puntos para girar la ruleta.');
+        return;
+    }
+    
+    showLoading();
+    
+    try {
+        // Generar premio aleatorio según probabilidades
+        var premio = generarPremioAleatorio();
+        
+        // Restar puntos
+        var puntosNuevos = puntosDisponibles - 3;
+        var girosTotales = (puntosCliente.giros_totales || 0) + 1;
+        
+        // Actualizar puntos en Supabase
+        var respUpdate = await supabase
+            .from('puntos_clientes')
+            .update({
+                puntos_disponibles: puntosNuevos,
+                giros_totales: girosTotales
+            })
+            .eq('numero', clienteActual.numero);
+        
+        if (respUpdate.error) {
+            throw new Error('Error actualizando puntos: ' + respUpdate.error.message);
+        }
+        
+        // Registrar tirada en Supabase
+        var ahora = new Date();
+        var fecha = ahora.getFullYear() + '-' + 
+                    String(ahora.getMonth() + 1).padStart(2, '0') + '-' + 
+                    String(ahora.getDate()).padStart(2, '0');
+        var hora = String(ahora.getHours()).padStart(2, '0') + ':' + 
+                   String(ahora.getMinutes()).padStart(2, '0') + ':' + 
+                   String(ahora.getSeconds()).padStart(2, '0');
+        
+        var respTirada = await supabase
+            .from('tiradas_ruleta')
+            .insert({
+                numero: clienteActual.numero,
+                nombre: clienteActual.nombre || '',
+                fecha: fecha,
+                hora: hora,
+                premio: premio,
+                gano_premio: premio !== 'NADA'
+            });
+        
+        if (respTirada.error) {
+            console.error('Error registrando tirada:', respTirada.error);
+        }
+        
+        // Actualizar puntos locales
+        puntosCliente.puntos_disponibles = puntosNuevos;
+        puntosCliente.giros_totales = girosTotales;
+        
+        // Mostrar resultado
+        mostrarResultadoRuleta(premio);
+        
+        // Actualizar vista
+        actualizarVistaPuntos();
+        
+        // Recargar historial
+        cargarHistorialRuleta();
+        
+    } catch (err) {
+        console.error('Error girando ruleta:', err);
+        alert('❌ Error al girar la ruleta:\n\n' + (err.message || 'Error desconocido'));
+    } finally {
+        hideLoading();
+    }
+}
+
+// Mostrar resultado de la ruleta
+function mostrarResultadoRuleta(premio) {
+    var resultadoDiv = document.getElementById('ruleta-resultado');
+    var premioText = document.getElementById('ruleta-premio-text');
+    
+    if (premio === 'NADA') {
+        premioText.innerHTML = '<span class="premio-nada">😔 No has ganado nada</span>';
+        premioText.className = 'ruleta-premio nada';
+    } else {
+        premioText.innerHTML = '<span class="premio-ganado">🎉 ¡Has ganado!</span><br><span class="premio-nombre">' + premio + '</span>';
+        premioText.className = 'ruleta-premio ganado';
+    }
+    
+    resultadoDiv.style.display = 'block';
+    
+    // Enviar notificación
+    if (premio !== 'NADA') {
+        enviarNotificacion('🎰 ¡Premio en la ruleta!', 'Has ganado: ' + premio, '🎰');
+    }
+}
+
+// Cerrar resultado de la ruleta
+function cerrarResultadoRuleta() {
+    document.getElementById('ruleta-resultado').style.display = 'none';
+}
+
+// Cargar historial de tiradas de ruleta
+async function cargarHistorialRuleta() {
+    if (!clienteActual) return;
+    try {
+        var resp = await supabase
+            .from('tiradas_ruleta')
+            .select('*')
+            .eq('numero', clienteActual.numero)
+            .order('fecha', { ascending: false })
+            .order('hora', { ascending: false })
+            .limit(50);
+        
+        if (resp.error) {
+            console.error('Error cargando historial ruleta:', resp.error);
+            return;
+        }
+        
+        var listaRuleta = document.getElementById('historial-ruleta');
+        var emptyRuleta = document.getElementById('empty-ruleta');
+        
+        if (!resp.data || resp.data.length === 0) {
+            listaRuleta.style.display = 'none';
+            emptyRuleta.style.display = 'block';
+            return;
+        }
+        
+        listaRuleta.style.display = 'flex';
+        emptyRuleta.style.display = 'none';
+        
+        var html = '';
+        for (var i = 0; i < resp.data.length; i++) {
+            var tirada = resp.data[i];
+            var fechaHora = formatDateFull(tirada.fecha);
+            if (tirada.hora) {
+                fechaHora += ' ' + formatHora(tirada.hora);
+            }
+            
+            var clasePremio = tirada.gano_premio ? 'ganado' : 'nada';
+            var iconoPremio = tirada.gano_premio ? '🎉' : '😔';
+            
+            html += '<div class="item-card ruleta-card ' + clasePremio + '">' +
+                    '<div class="item-info">' +
+                    '<div class="item-name">' + iconoPremio + ' ' + tirada.premio + '</div>' +
+                    '<div class="item-date">' + fechaHora + '</div>' +
+                    '</div>' +
+                    '</div>';
+        }
+        
+        listaRuleta.innerHTML = html;
+    } catch (err) {
+        console.error('Error cargando historial ruleta:', err);
+    }
+}
+
+// Generar premio aleatorio según probabilidades
+function generarPremioAleatorio() {
+    var premios = [
+        { premio: 'NADA', probabilidad: 66.0 },
+        { premio: 'Regalo COBRE', probabilidad: 3.0 },
+        { premio: 'Regalo PLATA', probabilidad: 2.5 },
+        { premio: 'Regalo ORO', probabilidad: 1.5 },
+        { premio: '10€ BONO', probabilidad: 1.7 },
+        { premio: '20€ BONO', probabilidad: 1.0 },
+        { premio: '30€ BONO', probabilidad: 0.3 },
+        { premio: '50€ BONO', probabilidad: 0.2 },
+        { premio: 'Tortuguita', probabilidad: 5.5 },
+        { premio: 'Chuche', probabilidad: 5.5 },
+        { premio: 'Panda', probabilidad: 5.5 },
+        { premio: 'Cacharrito', probabilidad: 5.5 }
+    ];
+    
+    var premiosAcumulados = [];
+    var acumulado = 0.0;
+    
+    for (var i = 0; i < premios.length; i++) {
+        acumulado += premios[i].probabilidad;
+        premiosAcumulados.push({
+            premio: premios[i].premio,
+            probabilidad_acumulada: acumulado
+        });
+    }
+    
+    var numeroAleatorio = Math.random() * 100;
+    
+    for (var j = 0; j < premiosAcumulados.length; j++) {
+        if (numeroAleatorio <= premiosAcumulados[j].probabilidad_acumulada) {
+            return premiosAcumulados[j].premio;
+        }
+    }
+    
+    return 'NADA';
 }
