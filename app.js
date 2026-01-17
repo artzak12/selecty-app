@@ -2137,7 +2137,7 @@ async function cargarHistorialRuleta() {
 // Generar premio aleatorio según probabilidades
 function generarPremioAleatorio() {
     var premios = [
-        { premio: 'NADA', probabilidad: 66.0 },
+        { premio: 'NADA', probabilidad: 50.0 },
         { premio: 'Regalo COBRE', probabilidad: 3.0 },
         { premio: 'Regalo PLATA', probabilidad: 2.5 },
         { premio: 'Regalo ORO', probabilidad: 1.5 },
@@ -2145,12 +2145,10 @@ function generarPremioAleatorio() {
         { premio: '20€ BONO', probabilidad: 1.0 },
         { premio: '30€ BONO', probabilidad: 0.3 },
         { premio: '50€ BONO', probabilidad: 0.2 },
-        { premio: 'Tortuguita', probabilidad: 5.5 },
-        { premio: 'Chuche', probabilidad: 5.5 },
-        { premio: 'Panda', probabilidad: 5.5 },
-        { premio: 'Cacharrito', probabilidad: 5.5 },
-        // Ajustar para que sume 100% (faltan 1.8% - se añaden a NADA)
-        { premio: 'NADA', probabilidad: 1.8 }
+        { premio: 'Tortuguita', probabilidad: 9.95 },
+        { premio: 'Chuche', probabilidad: 9.95 },
+        { premio: 'Panda', probabilidad: 9.95 },
+        { premio: 'Cacharrito', probabilidad: 9.95 }
     ];
     
     var premiosAcumulados = [];
