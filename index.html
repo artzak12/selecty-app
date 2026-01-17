@@ -81,6 +81,11 @@
                     <span class="bono-icon">💰</span>
                 </div>
                 <div class="bono-amount" id="bono-disponible">0,00 EUR</div>
+                <div class="nivel-display" id="nivel-display">
+                    <span class="nivel-escudo" id="nivel-escudo">🌱</span>
+                    <span class="nivel-nombre" id="nivel-nombre">Novato</span>
+                    <span class="nivel-badge">Nivel <span id="nivel-numero">1</span></span>
+                </div>
             </div>
             <div class="stats-grid">
                 <div class="stat-card">
@@ -103,8 +108,9 @@
             <!-- Sección Puntos y Ruleta -->
             <div class="seccion-destacada" id="seccion-puntos">
                 <div class="seccion-header" onclick="toggleSeccion('puntos')">
-                    <span class="seccion-icon">🎰</span>
+                    <span class="seccion-icon">🎡</span>
                     <span class="seccion-titulo">Puntos y Ruleta</span>
+                    <button class="btn-ayuda-ruleta" onclick="event.stopPropagation(); mostrarAyudaRuleta();" title="¿Cómo funciona?">?</button>
                     <span class="seccion-toggle" id="toggle-puntos">▼</span>
                 </div>
                 <div class="seccion-contenido" id="contenido-puntos" style="display:none;">
@@ -124,11 +130,30 @@
                         </div>
                     </div>
                     <button id="btn-girar-ruleta" class="btn-ruleta" onclick="girarRuleta()">
-                        <span class="btn-ruleta-icon">🎰</span>
+                        <span class="btn-ruleta-icon">🎡</span>
                         <span class="btn-ruleta-text">Girar Ruleta</span>
                         <span class="btn-ruleta-coste">(3 puntos)</span>
                     </button>
                     <div id="ruleta-resultado" class="ruleta-resultado" style="display:none;">
+                        <div id="ruleta-visual-container" style="display:none;">
+                            <div class="ruleta-visual-wrapper">
+                                <div class="ruleta-visual" id="ruleta-visual">
+                                    <div class="ruleta-sector" style="background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);"></div>
+                                    <div class="ruleta-sector" style="background: linear-gradient(135deg, #C0C0C0 0%, #808080 100%);"></div>
+                                    <div class="ruleta-sector" style="background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);"></div>
+                                    <div class="ruleta-sector" style="background: linear-gradient(135deg, #CD7F32 0%, #8B4513 100%);"></div>
+                                    <div class="ruleta-sector" style="background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);"></div>
+                                    <div class="ruleta-sector" style="background: linear-gradient(135deg, #C0C0C0 0%, #808080 100%);"></div>
+                                    <div class="ruleta-sector" style="background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);"></div>
+                                    <div class="ruleta-sector" style="background: linear-gradient(135deg, #CD7F32 0%, #8B4513 100%);"></div>
+                                    <div class="ruleta-sector" style="background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);"></div>
+                                    <div class="ruleta-sector" style="background: linear-gradient(135deg, #C0C0C0 0%, #808080 100%);"></div>
+                                    <div class="ruleta-sector" style="background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);"></div>
+                                    <div class="ruleta-sector" style="background: linear-gradient(135deg, #CD7F32 0%, #8B4513 100%);"></div>
+                                </div>
+                                <div class="ruleta-flecha"></div>
+                            </div>
+                        </div>
                         <div class="ruleta-premio" id="ruleta-premio-text"></div>
                         <button class="btn-cerrar-resultado" onclick="cerrarResultadoRuleta()">Cerrar</button>
                     </div>
@@ -170,7 +195,7 @@
                 <button class="tab active" data-tab="en-caja">📦 En mi caja</button>
                 <button class="tab" data-tab="historial">📜 Historial</button>
                 <button class="tab" data-tab="mis-bonos">💳 Mis Bonos</button>
-                <button class="tab" data-tab="ruleta">🎰 Ruleta</button>
+                <button class="tab" data-tab="ruleta">🎡 Ruleta</button>
             </div>
             <div class="tab-content">
                 <div id="tab-en-caja" class="tab-panel active">
@@ -200,7 +225,7 @@
                 <div id="tab-ruleta" class="tab-panel">
                     <div id="historial-ruleta" class="items-list"></div>
                     <div id="empty-ruleta" class="empty-state">
-                        <div class="empty-icon">🎰</div>
+                        <div class="empty-icon">🎡</div>
                         <p>Sin tiradas</p>
                         <span>Aqui apareceran tus tiradas de ruleta</span>
                     </div>
@@ -357,6 +382,60 @@
                 <div id="ventas-lista" class="ventas-admin-lista"></div>
             </div>
         </main>
+    </div>
+
+    <!-- Modal de Ayuda - Sistema de Puntos y Ruleta -->
+    <div id="modal-ayuda-ruleta" class="popup-overlay" onclick="cerrarAyudaRuleta()">
+        <div class="popup-box ayuda-ruleta-box" onclick="event.stopPropagation();">
+            <div class="popup-header">
+                <span class="popup-icon">🎡</span>
+                <h3>¿Cómo funciona la Ruleta?</h3>
+            </div>
+            <div class="ayuda-ruleta-content">
+                <div class="ayuda-seccion">
+                    <h4 class="ayuda-titulo">💰 Obtener Puntos</h4>
+                    <p class="ayuda-texto">Gana puntos cada vez que compras un bono:</p>
+                    <ul class="ayuda-lista">
+                        <li><strong>30€</strong> → 1 punto</li>
+                        <li><strong>50€</strong> → 2 puntos</li>
+                        <li><strong>100€</strong> → 3 puntos</li>
+                        <li><strong>150€</strong> → 5 puntos</li>
+                        <li><strong>200€</strong> → 6 puntos</li>
+                        <li><strong>250€</strong> → 8 puntos</li>
+                        <li><strong>300€</strong> → 9 puntos</li>
+                    </ul>
+                </div>
+                
+                <div class="ayuda-seccion">
+                    <h4 class="ayuda-titulo">🎡 Girar la Ruleta</h4>
+                    <p class="ayuda-texto">Cada giro cuesta <strong>3 puntos</strong>. ¡Gira y gana premios increíbles!</p>
+                </div>
+                
+                <div class="ayuda-seccion">
+                    <h4 class="ayuda-titulo">🎁 Premios Disponibles</h4>
+                    <div class="premios-grid">
+                        <div class="premio-item">🎁 Regalo COBRE</div>
+                        <div class="premio-item">🎁 Regalo PLATA</div>
+                        <div class="premio-item">🎁 Regalo ORO</div>
+                        <div class="premio-item">💶 10€ BONO</div>
+                        <div class="premio-item">💶 20€ BONO</div>
+                        <div class="premio-item">💶 30€ BONO</div>
+                        <div class="premio-item">💶 50€ BONO</div>
+                        <div class="premio-item">🐢 Tortuguita</div>
+                        <div class="premio-item">🍬 Chuche</div>
+                        <div class="premio-item">🐼 Panda</div>
+                        <div class="premio-item">🎮 Cacharrito</div>
+                    </div>
+                    <p class="ayuda-nota">💡 Los premios se añaden automáticamente a tu cuenta</p>
+                </div>
+                
+                <div class="ayuda-seccion">
+                    <h4 class="ayuda-titulo">⭐ Sistema de Niveles</h4>
+                    <p class="ayuda-texto">Sube de nivel acumulando puntos y realizando giros. Cada nivel te otorga nuevos beneficios y reconocimiento.</p>
+                </div>
+            </div>
+            <button class="btn-cerrar-ayuda" onclick="cerrarAyudaRuleta()">Entendido</button>
+        </div>
     </div>
 
     <!-- Popup Crear Contrasena -->
