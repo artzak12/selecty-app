@@ -374,6 +374,161 @@ main { padding: 20px; max-width: 600px; margin: 0 auto; }
 }
 
 /* Secciones destacadas (LIVES y Ofertas) */
+/* 🎰 Estilos para Puntos y Ruleta */
+.puntos-card {
+    background: var(--bg-card);
+    border-radius: var(--border-radius);
+    padding: 20px;
+    margin-top: 16px;
+    border: 1px solid #333;
+}
+
+.puntos-info {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.puntos-disponibles,
+.puntos-acumulados,
+.nivel-actual {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px;
+    background: rgba(255, 215, 0, 0.1);
+    border-radius: 12px;
+    border: 1px solid rgba(255, 215, 0, 0.2);
+}
+
+.puntos-label,
+.nivel-label {
+    font-size: 14px;
+    color: var(--text-secondary);
+}
+
+.puntos-value {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--primary);
+}
+
+.nivel-value {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--primary);
+}
+
+.btn-ruleta {
+    width: 100%;
+    padding: 18px;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+    color: var(--bg-dark);
+    border: none;
+    border-radius: 12px;
+    font-size: 18px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3);
+}
+
+.btn-ruleta:hover:not(.disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(255, 215, 0, 0.4);
+}
+
+.btn-ruleta.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.btn-ruleta-icon {
+    font-size: 24px;
+}
+
+.btn-ruleta-text {
+    flex: 1;
+}
+
+.btn-ruleta-coste {
+    font-size: 14px;
+    opacity: 0.8;
+}
+
+.ruleta-resultado {
+    margin-top: 20px;
+    padding: 20px;
+    background: rgba(255, 215, 0, 0.1);
+    border-radius: 12px;
+    border: 2px solid var(--primary);
+    text-align: center;
+}
+
+.ruleta-premio {
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 16px;
+}
+
+.ruleta-premio.ganado {
+    color: var(--success);
+}
+
+.ruleta-premio.nada {
+    color: var(--text-secondary);
+}
+
+.premio-ganado {
+    display: block;
+    font-size: 20px;
+    margin-bottom: 8px;
+}
+
+.premio-nombre {
+    display: block;
+    font-size: 28px;
+    color: var(--primary);
+}
+
+.premio-nada {
+    display: block;
+    font-size: 20px;
+}
+
+.btn-cerrar-resultado {
+    padding: 10px 20px;
+    background: var(--bg-card);
+    color: var(--text-primary);
+    border: 1px solid #333;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.3s ease;
+}
+
+.btn-cerrar-resultado:hover {
+    background: var(--bg-card-hover);
+}
+
+.ruleta-card {
+    border-left: 4px solid transparent;
+}
+
+.ruleta-card.ganado {
+    border-left-color: var(--success);
+}
+
+.ruleta-card.nada {
+    border-left-color: var(--danger);
+    opacity: 0.7;
+}
+
 .seccion-destacada {
     margin: 12px 16px;
     background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
