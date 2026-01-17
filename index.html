@@ -99,6 +99,39 @@
                     <div class="stat-label">Ultima compra</div>
                 </div>
             </div>
+            
+            <!-- Sección Puntos y Ruleta -->
+            <div class="seccion-destacada" id="seccion-puntos">
+                <div class="seccion-header">
+                    <span class="seccion-icon">🎰</span>
+                    <span class="seccion-titulo">Puntos y Ruleta</span>
+                </div>
+                <div class="puntos-card">
+                    <div class="puntos-info">
+                        <div class="puntos-disponibles">
+                            <span class="puntos-label">Puntos disponibles</span>
+                            <span class="puntos-value" id="puntos-disponibles">0</span>
+                        </div>
+                        <div class="puntos-acumulados">
+                            <span class="puntos-label">Puntos acumulados</span>
+                            <span class="puntos-value" id="puntos-acumulados">0</span>
+                        </div>
+                        <div class="nivel-actual">
+                            <span class="nivel-label">Nivel</span>
+                            <span class="nivel-value" id="nivel-actual">🌱 Novato</span>
+                        </div>
+                    </div>
+                    <button id="btn-girar-ruleta" class="btn-ruleta" onclick="girarRuleta()">
+                        <span class="btn-ruleta-icon">🎰</span>
+                        <span class="btn-ruleta-text">Girar Ruleta</span>
+                        <span class="btn-ruleta-coste">(3 puntos)</span>
+                    </button>
+                    <div id="ruleta-resultado" class="ruleta-resultado" style="display:none;">
+                        <div class="ruleta-premio" id="ruleta-premio-text"></div>
+                        <button class="btn-cerrar-resultado" onclick="cerrarResultadoRuleta()">Cerrar</button>
+                    </div>
+                </div>
+            </div>
             <!-- Sección Próximos LIVES -->
             <div class="seccion-destacada" id="seccion-lives">
                 <div class="seccion-header">
@@ -117,6 +150,7 @@
                 <button class="tab active" data-tab="en-caja">📦 En mi caja</button>
                 <button class="tab" data-tab="historial">📜 Historial</button>
                 <button class="tab" data-tab="mis-bonos">💳 Mis Bonos</button>
+                <button class="tab" data-tab="ruleta">🎰 Ruleta</button>
                 <button class="tab" data-tab="ofertas">🎁 Ofertas</button>
             </div>
             <div class="tab-content">
@@ -142,6 +176,14 @@
                         <div class="empty-icon">💳</div>
                         <p>Sin bonos</p>
                         <span>Aqui apareceran tus bonos adquiridos</span>
+                    </div>
+                </div>
+                <div id="tab-ruleta" class="tab-panel">
+                    <div id="historial-ruleta" class="items-list"></div>
+                    <div id="empty-ruleta" class="empty-state">
+                        <div class="empty-icon">🎰</div>
+                        <p>Sin tiradas</p>
+                        <span>Aqui apareceran tus tiradas de ruleta</span>
                     </div>
                 </div>
                 <div id="tab-ofertas" class="tab-panel">
