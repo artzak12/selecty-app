@@ -1799,6 +1799,9 @@ async function girarRuleta() {
     try {
         // Generar premio aleatorio según probabilidades
         var premio = generarPremioAleatorio();
+        console.log('[RULETA] ========================================');
+        console.log('[RULETA] PREMIO GENERADO ALEATORIAMENTE:', premio);
+        console.log('[RULETA] ========================================');
         
         // Restar puntos
         var puntosNuevos = puntosDisponibles - 3;
@@ -1929,26 +1932,29 @@ async function girarRuleta() {
     }
 }
 
+// Definición global de premios (para sincronizar entre ruleta visual y generación aleatoria)
+var PREMIOS_RULETA_CONFIG = [
+    { nombre: 'NADA', porcentaje: 50.0, color: '#666666', color2: '#444444', emoji: '😔' },
+    { nombre: 'Regalo COBRE', porcentaje: 3.0, color: '#CD7F32', color2: '#8B4513', emoji: '🥉' },
+    { nombre: 'Regalo PLATA', porcentaje: 2.5, color: '#C0C0C0', color2: '#808080', emoji: '🥈' },
+    { nombre: 'Regalo ORO', porcentaje: 1.5, color: '#FFD700', color2: '#FFA500', emoji: '🥇' },
+    { nombre: '10€ BONO', porcentaje: 1.7, color: '#4CAF50', color2: '#2E7D32', emoji: '💶' },
+    { nombre: '20€ BONO', porcentaje: 1.0, color: '#2196F3', color2: '#1565C0', emoji: '💶' },
+    { nombre: '30€ BONO', porcentaje: 0.3, color: '#9C27B0', color2: '#6A1B9A', emoji: '💶' },
+    { nombre: '50€ BONO', porcentaje: 0.2, color: '#F44336', color2: '#C62828', emoji: '💶' },
+    { nombre: 'Tortuguita', porcentaje: 9.95, color: '#8BC34A', color2: '#689F38', emoji: '🐢' },
+    { nombre: 'Chuche', porcentaje: 9.95, color: '#FF9800', color2: '#F57C00', emoji: '🍬' },
+    { nombre: 'Panda', porcentaje: 9.95, color: '#000000', color2: '#FFFFFF', emoji: '🐼' },
+    { nombre: 'Cacharrito', porcentaje: 9.95, color: '#607D8B', color2: '#37474F', emoji: '🎮' }
+];
+
 // Crear ruleta visual con todos los premios
 function crearRuletaVisual() {
     var ruletaVisual = document.getElementById('ruleta-visual');
     if (!ruletaVisual) return;
     
-    // Definir premios con sus porcentajes y colores
-    var premios = [
-        { nombre: 'NADA', porcentaje: 50.0, color: '#666666', color2: '#444444', emoji: '😔' },
-        { nombre: 'Regalo COBRE', porcentaje: 3.0, color: '#CD7F32', color2: '#8B4513', emoji: '🥉' },
-        { nombre: 'Regalo PLATA', porcentaje: 2.5, color: '#C0C0C0', color2: '#808080', emoji: '🥈' },
-        { nombre: 'Regalo ORO', porcentaje: 1.5, color: '#FFD700', color2: '#FFA500', emoji: '🥇' },
-        { nombre: '10€ BONO', porcentaje: 1.7, color: '#4CAF50', color2: '#2E7D32', emoji: '💶' },
-        { nombre: '20€ BONO', porcentaje: 1.0, color: '#2196F3', color2: '#1565C0', emoji: '💶' },
-        { nombre: '30€ BONO', porcentaje: 0.3, color: '#9C27B0', color2: '#6A1B9A', emoji: '💶' },
-        { nombre: '50€ BONO', porcentaje: 0.2, color: '#F44336', color2: '#C62828', emoji: '💶' },
-        { nombre: 'Tortuguita', porcentaje: 9.95, color: '#8BC34A', color2: '#689F38', emoji: '🐢' },
-        { nombre: 'Chuche', porcentaje: 9.95, color: '#FF9800', color2: '#F57C00', emoji: '🍬' },
-        { nombre: 'Panda', porcentaje: 9.95, color: '#000000', color2: '#FFFFFF', emoji: '🐼' },
-        { nombre: 'Cacharrito', porcentaje: 9.95, color: '#607D8B', color2: '#37474F', emoji: '🎮' }
-    ];
+    // Usar la configuración global de premios para asegurar sincronización
+    var premios = PREMIOS_RULETA_CONFIG;
     
     // Crear conic-gradient con todos los premios
     var gradientes = [];
@@ -1992,17 +1998,35 @@ function calcularAnguloPremio(premioGanado) {
         var nombrePremioLista = premio.nombre.trim().toUpperCase();
         
         if (nombrePremio === nombrePremioLista) {
-            // La flecha está arriba (0 grados), necesitamos rotar la ruleta
-            // para que el centro del sector del premio quede exactamente arriba
-            // Como la ruleta gira en sentido horario, rotamos: 360 - anguloMedio
-            return 360 - anguloMedio;
+            // La flecha está arriba (0 grados = posición 12 en punto)
+            // El conic-gradient empieza desde arriba (0 grados) y va en sentido horario
+            // El ánguloMedio es la posición del centro del sector desde el inicio (0 grados)
+            // 
+            // Para que el centro del sector quede exactamente arriba (donde está la flecha):
+            // Necesitamos rotar la ruleta para que el punto que está en anguloMedio quede en 0
+            // Como rotate() gira en sentido horario:
+            // - Si rotamos X grados, todo se mueve X grados en sentido horario
+            // - Para que el punto en anguloMedio quede en 0, rotamos: anguloMedio grados
+            // Pero espera, eso movería el punto a anguloMedio + anguloMedio = 2*anguloMedio
+            // 
+            // La solución correcta: rotamos en sentido antihorario (negativo) o:
+            // Rotamos 360 - anguloMedio para que el punto quede arriba
+            // Ejemplo: Si el sector está en 90° (centro), rotamos 360-90=270° para que quede arriba
+            var anguloRotacion = anguloMedio === 0 ? 0 : 360 - anguloMedio;
+            console.log('[RULETA] ========================================');
+            console.log('[RULETA] Premio encontrado:', premioGanado);
+            console.log('[RULETA] Sector visual:', anguloAcumulado.toFixed(1) + '°-' + (anguloAcumulado + anguloSector).toFixed(1) + '°');
+            console.log('[RULETA] Centro del sector:', anguloMedio.toFixed(1) + '°');
+            console.log('[RULETA] Rotación calculada:', anguloRotacion.toFixed(1) + '° (para que quede arriba)');
+            console.log('[RULETA] ========================================');
+            return anguloRotacion;
         }
         
         anguloAcumulado += anguloSector;
     }
     
     // Si no se encuentra el premio, devolver 0
-    console.warn('Premio no encontrado en la ruleta:', premioGanado);
+    console.warn('[RULETA] Premio no encontrado en la ruleta:', premioGanado);
     return 0;
 }
 
@@ -2045,18 +2069,28 @@ function mostrarAnimacionRuleta(premio) {
     
     // Calcular rotación final exacta según el premio
     var anguloPremio = calcularAnguloPremio(premio);
-    var vueltasCompletas = 5 + Math.random() * 3; // Entre 5 y 8 vueltas
+    console.log('[RULETA] Premio ganado:', premio, 'Ángulo calculado:', anguloPremio);
+    
+    var vueltasCompletas = 8 + Math.random() * 4; // Entre 8 y 12 vueltas para más emoción
+    // Asegurar que el ángulo final sea positivo y correcto
     var anguloFinal = (vueltasCompletas * 360) + anguloPremio;
+    
+    // Duración de la animación: 11 segundos (más emocionante)
+    var duracionAnimacion = 11000; // 11 segundos en milisegundos
+    
+    console.log('[RULETA] Vueltas:', vueltasCompletas.toFixed(2), 'Ángulo final:', anguloFinal.toFixed(2));
+    console.log('[RULETA] Duración de animación:', (duracionAnimacion / 1000) + ' segundos');
     
     // Iniciar animación de giro
     setTimeout(function() {
         if (ruletaVisual) {
-            ruletaVisual.style.transition = 'transform 2.5s cubic-bezier(0.4, 0, 0.2, 1)';
+            // Usar una curva de animación más dramática con desaceleración al final
+            ruletaVisual.style.transition = 'transform ' + (duracionAnimacion / 1000) + 's cubic-bezier(0.25, 0.1, 0.25, 1)';
             ruletaVisual.style.transform = 'rotate(' + anguloFinal + 'deg)';
         }
     }, 50);
     
-    // Simular giro de ruleta (2.5 segundos para más dramatismo)
+    // Simular giro de ruleta (duración ajustada para más dramatismo - 11 segundos)
     setTimeout(function() {
         // Detener efectos
         detenerEfectosGiro();
@@ -2088,7 +2122,7 @@ function mostrarAnimacionRuleta(premio) {
         if (premio !== 'NADA') {
             enviarNotificacion('🎡 ¡Premio en la ruleta!', 'Has ganado: ' + premio, '🎡');
         }
-    }, 2500);
+    }, duracionAnimacion);
 }
 
 // Funciones auxiliares para efectos visuales
@@ -2222,22 +2256,12 @@ async function cargarHistorialRuleta() {
     }
 }
 
-// Generar premio aleatorio según probabilidades
+// Generar premio aleatorio según probabilidades (usa la misma configuración que la ruleta visual)
 function generarPremioAleatorio() {
-    var premios = [
-        { premio: 'NADA', probabilidad: 50.0 },
-        { premio: 'Regalo COBRE', probabilidad: 3.0 },
-        { premio: 'Regalo PLATA', probabilidad: 2.5 },
-        { premio: 'Regalo ORO', probabilidad: 1.5 },
-        { premio: '10€ BONO', probabilidad: 1.7 },
-        { premio: '20€ BONO', probabilidad: 1.0 },
-        { premio: '30€ BONO', probabilidad: 0.3 },
-        { premio: '50€ BONO', probabilidad: 0.2 },
-        { premio: 'Tortuguita', probabilidad: 9.95 },
-        { premio: 'Chuche', probabilidad: 9.95 },
-        { premio: 'Panda', probabilidad: 9.95 },
-        { premio: 'Cacharrito', probabilidad: 9.95 }
-    ];
+    // Usar la configuración global para asegurar sincronización
+    var premios = PREMIOS_RULETA_CONFIG.map(function(p) {
+        return { premio: p.nombre, probabilidad: p.porcentaje };
+    });
     
     var premiosAcumulados = [];
     var acumulado = 0.0;
