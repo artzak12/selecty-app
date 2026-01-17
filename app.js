@@ -171,6 +171,9 @@ async function verificarCambiosYNotificar() {
                     'Se ha añadido ' + importe.toFixed(0) + '€ a tu saldo disponible',
                     '💰'
                 );
+                // 🎯 RECARGAR PUNTOS cuando se detecta un nuevo bono
+                console.log('[NOTIFICACIONES] Nuevo bono detectado, recargando puntos...');
+                cargarPuntosCliente();
                 // Actualizar estado anterior
                 estadoAnterior.bonos = respBonos.data.slice(0, 5);
             }
