@@ -2090,15 +2090,21 @@ function calcularAnguloPremio(premioGanado) {
             // PRUEBA FINAL: Rotar 270 - anguloMedio
             // Para NADA (90°): 270 - 90 = 180°... no funciona
             // 
-            // SOLUCIÓN FINAL: Rotar 180 + anguloMedio para invertir completamente
-            // Para NADA (90°): 180 + 90 = 270°
-            // El sector ahora estará en: (90 + 270) mod 360 = 0° ✓
+            // SOLUCIÓN DEFINITIVA: El conic-gradient empieza desde arriba (0°) y va en sentido horario
+            // La flecha está fija arriba (0°)
+            // Para que el sector en anguloMedio quede arriba (0°):
+            // Necesitamos rotar la ruleta para que el sector en anguloMedio se mueva hasta 0°
             // 
-            // Esto funciona porque:
-            // - El conic-gradient empieza desde arriba (0°) y va en sentido horario
-            // - La flecha está fija arriba (0°)
-            // - Cuando rotamos 270° en sentido horario, el sector que estaba en 90° ahora está en 0°
-            var anguloRotacion = anguloMedio === 0 ? 180 : (180 + anguloMedio);
+            // Cuando rotamos con CSS rotate() en sentido horario (positivo):
+            // - El sector que estaba en anguloMedio ahora estará en: (anguloMedio + rotacion) mod 360
+            // - Para que quede en 0°: (anguloMedio + rotacion) mod 360 = 0
+            // - Esto significa: anguloMedio + rotacion = 360 (o múltiplos)
+            // - Por lo tanto: rotacion = 360 - anguloMedio
+            // 
+            // Ejemplo con NADA (centro en 90°):
+            // Rotamos: 360 - 90 = 270° (horario)
+            // El sector ahora estará en: (90 + 270) mod 360 = 360 mod 360 = 0° ✓
+            var anguloRotacion = anguloMedio === 0 ? 0 : 360 - anguloMedio;
             
             console.log('[RULETA] ========================================');
             console.log('[RULETA] Premio encontrado:', premioGanado);
