@@ -1576,7 +1576,18 @@ let puntosCliente = null;
 
 // Cargar puntos del cliente desde Supabase
 async function cargarPuntosCliente() {
-    if (!clienteActual) return;
+    if (!clienteActual) {
+        // Si no hay clienteActual, crear valores por defecto para evitar errores
+        puntosCliente = {
+            numero: 0,
+            puntos_acumulados: 0,
+            puntos_disponibles: 0,
+            giros_totales: 0,
+            nivel_actual: 1,
+            nombre_nivel: '🌱 Novato'
+        };
+        return;
+    }
     try {
         var resp = await supabase
             .from('puntos_clientes')
@@ -1586,6 +1597,16 @@ async function cargarPuntosCliente() {
         
         if (resp.error) {
             console.error('Error cargando puntos:', resp.error);
+            // Crear valores por defecto en caso de error
+            puntosCliente = {
+                numero: clienteActual.numero,
+                puntos_acumulados: 0,
+                puntos_disponibles: 0,
+                giros_totales: 0,
+                nivel_actual: 1,
+                nombre_nivel: '🌱 Novato'
+            };
+            actualizarVistaPuntos();
             return;
         }
         
@@ -1606,19 +1627,50 @@ async function cargarPuntosCliente() {
         actualizarVistaPuntos();
     } catch (err) {
         console.error('Error cargando puntos:', err);
+        // Crear valores por defecto en caso de excepción
+        if (clienteActual) {
+            puntosCliente = {
+                numero: clienteActual.numero,
+                puntos_acumulados: 0,
+                puntos_disponibles: 0,
+                giros_totales: 0,
+                nivel_actual: 1,
+                nombre_nivel: '🌱 Novato'
+            };
+            actualizarVistaPuntos();
+        }
     }
 }
 
 // Actualizar la vista de puntos
 function actualizarVistaPuntos() {
-    if (!puntosCliente) return;
+    // Asegurarse de que los elementos existan antes de actualizarlos
+    var puntosDisponiblesEl = document.getElementById('puntos-disponibles');
+    var puntosAcumuladosEl = document.getElementById('puntos-acumulados');
+    var nivelActualEl = document.getElementById('nivel-actual');
+    var btnRuleta = document.getElementById('btn-girar-ruleta');
     
-    document.getElementById('puntos-disponibles').textContent = puntosCliente.puntos_disponibles || 0;
-    document.getElementById('puntos-acumulados').textContent = puntosCliente.puntos_acumulados || 0;
-    document.getElementById('nivel-actual').textContent = puntosCliente.nombre_nivel || '🌱 Novato';
+    if (!puntosDisponiblesEl || !puntosAcumuladosEl || !nivelActualEl || !btnRuleta) {
+        return; // Los elementos aún no están en el DOM
+    }
+    
+    // Si no hay puntosCliente, crear valores por defecto
+    if (!puntosCliente) {
+        puntosCliente = {
+            numero: clienteActual ? clienteActual.numero : 0,
+            puntos_acumulados: 0,
+            puntos_disponibles: 0,
+            giros_totales: 0,
+            nivel_actual: 1,
+            nombre_nivel: '🌱 Novato'
+        };
+    }
+    
+    puntosDisponiblesEl.textContent = puntosCliente.puntos_disponibles || 0;
+    puntosAcumuladosEl.textContent = puntosCliente.puntos_acumulados || 0;
+    nivelActualEl.textContent = puntosCliente.nombre_nivel || '🌱 Novato';
     
     // Habilitar/deshabilitar botón de ruleta según puntos disponibles
-    var btnRuleta = document.getElementById('btn-girar-ruleta');
     var puntosDisponibles = puntosCliente.puntos_disponibles || 0;
     
     if (puntosDisponibles >= 3) {
@@ -1636,9 +1688,26 @@ function actualizarVistaPuntos() {
 
 // Girar la ruleta
 async function girarRuleta() {
-    if (!clienteActual || !puntosCliente) {
+    if (!clienteActual) {
         alert('❌ Error: No se pudo cargar la información del cliente');
         return;
+    }
+    
+    // Si no hay puntos cargados, intentar cargarlos primero
+    if (!puntosCliente) {
+        await cargarPuntosCliente();
+    }
+    
+    // Si aún no hay puntosCliente, crear valores por defecto
+    if (!puntosCliente) {
+        puntosCliente = {
+            numero: clienteActual.numero,
+            puntos_acumulados: 0,
+            puntos_disponibles: 0,
+            giros_totales: 0,
+            nivel_actual: 1,
+            nombre_nivel: '🌱 Novato'
+        };
     }
     
     var puntosDisponibles = puntosCliente.puntos_disponibles || 0;
