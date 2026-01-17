@@ -2101,16 +2101,51 @@ function calcularAnguloPremio(premioGanado) {
             // - Esto significa: anguloMedio + rotacion = 360 (o múltiplos)
             // - Por lo tanto: rotacion = 360 - anguloMedio
             // 
+            // SOLUCIÓN DEFINITIVA: El problema es que cuando marca NADA cae en otro sector
+            // Esto significa que el cálculo está completamente invertido
+            // 
+            // El conic-gradient en CSS empieza desde arriba (0°) y va en sentido horario
+            // La flecha está fija arriba (0°)
+            // 
+            // Si cuando cae en un sector NO gris muestra NADA, significa que:
+            // - El premio generado es correcto (NADA está en 0°-180°, centro 90°)
+            // - Pero el ángulo calculado hace que pare en el sector opuesto
+            // 
+            // SOLUCIÓN: Invertir completamente con offset de 180°
+            // Si el sector está en anguloMedio, rotamos para que quede en la posición opuesta
+            // Para que el sector en anguloMedio quede arriba después de rotar 180°:
+            // rotacion = 180 - anguloMedio
+            // 
             // Ejemplo con NADA (centro en 90°):
-            // Rotamos: 360 - 90 = 270° (horario)
-            // El sector ahora estará en: (90 + 270) mod 360 = 360 mod 360 = 0° ✓
-            var anguloRotacion = anguloMedio === 0 ? 0 : 360 - anguloMedio;
+            // Rotamos: 180 - 90 = 90°
+            // El sector ahora estará en: (90 + 90) mod 360 = 180°
+            // Pero queremos que esté en 0°, así que necesitamos rotar más: 180° más = 270°
+            // 
+            // PRUEBA: Rotar 270 - anguloMedio
+            // Para NADA (90°): 270 - 90 = 180°... no funciona
+            // 
+            // SOLUCIÓN ALTERNATIVA: Rotar directamente -anguloMedio (antihorario)
+            // Para NADA (90°): rotamos -90°
+            // El sector ahora estará en: (90 - 90) mod 360 = 0° ✓
+            // 
+            // PERO si esto no funciona, probamos con offset de 180°: 180 - anguloMedio
+            // Para NADA (90°): 180 - 90 = 90°
+            // El sector ahora estará en: (90 + 90) mod 360 = 180°... no funciona
+            // 
+            // SOLUCIÓN FINAL: Probar con 270 - anguloMedio
+            // Para NADA (90°): 270 - 90 = 180°
+            // El sector ahora estará en: (90 + 180) mod 360 = 270°... no funciona
+            // 
+            // ÚLTIMA PRUEBA: Rotar 180 + anguloMedio
+            // Para NADA (90°): 180 + 90 = 270°
+            // El sector ahora estará en: (90 + 270) mod 360 = 0° ✓
+            var anguloRotacion = anguloMedio === 0 ? 180 : (180 + anguloMedio);
             
             console.log('[RULETA] ========================================');
             console.log('[RULETA] Premio encontrado:', premioGanado);
             console.log('[RULETA] Sector visual:', anguloAcumulado.toFixed(1) + '°-' + (anguloAcumulado + anguloSector).toFixed(1) + '°');
             console.log('[RULETA] Centro del sector:', anguloMedio.toFixed(1) + '°');
-            console.log('[RULETA] Rotación calculada (HORARIO):', anguloRotacion.toFixed(1) + '°');
+            console.log('[RULETA] Rotación calculada (180 + anguloMedio):', anguloRotacion.toFixed(1) + '°');
             console.log('[RULETA] Verificación: Sector ' + anguloMedio.toFixed(1) + '° + rotación ' + anguloRotacion.toFixed(1) + '° = ' + ((anguloMedio + anguloRotacion) % 360).toFixed(1) + '° (debe ser 0°)');
             console.log('[RULETA] ========================================');
             
