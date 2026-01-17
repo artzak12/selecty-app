@@ -1998,14 +1998,14 @@ function calcularAnguloPremio(premioGanado) {
         var nombrePremioLista = premio.nombre.trim().toUpperCase();
         
         if (nombrePremio === nombrePremioLista) {
-            // CORRECCIÓN CRÍTICA: El cálculo anterior estaba invertido
+            // CORRECCIÓN DEFINITIVA DEL ÁNGULO
             // 
             // La flecha está fija arriba (0 grados = posición 12 en punto)
             // El conic-gradient empieza desde arriba (0 grados) y va en sentido horario
             // El ánguloMedio es la posición del centro del sector desde el inicio (0 grados)
             // 
             // Cuando rotamos la ruleta con rotate(Xdeg) en CSS:
-            // - La rotación es en sentido horario (positivo) o antihorario (negativo)
+            // - La rotación es en sentido horario (positivo)
             // - Si rotamos X grados positivos, todo se mueve X grados en sentido horario
             // 
             // Para que el sector que está en anguloMedio quede exactamente arriba (0°):
@@ -2015,23 +2015,21 @@ function calcularAnguloPremio(premioGanado) {
             // Esto significa: anguloMedio + Y = 360 (o múltiplos)
             // Por lo tanto: Y = 360 - anguloMedio
             // 
-            // PERO: El problema es que CSS rotate() puede estar interpretando la rotación de manera diferente
-            // o el conic-gradient puede estar empezando desde una posición diferente.
-            // 
-            // PRUEBA: Invertir el cálculo. Si rotamos -anguloMedio (sentido antihorario):
-            // El sector que estaba en anguloMedio ahora estará en: (anguloMedio - anguloMedio) mod 360 = 0° ✓
-            // 
             // Ejemplo con Chuche (naranja) en 270.5°:
-            // Rotamos: -270.5° (sentido antihorario)
-            // El sector ahora estará en: (270.5 - 270.5) mod 360 = 0° ✓
-            var anguloRotacion = anguloMedio === 0 ? 0 : -anguloMedio;
+            // Rotamos: 360 - 270.5 = 89.5° (sentido horario)
+            // El sector ahora estará en: (270.5 + 89.5) mod 360 = 360 mod 360 = 0° ✓
+            // 
+            // Ejemplo con NADA (gris) en 90°:
+            // Rotamos: 360 - 90 = 270° (sentido horario)
+            // El sector ahora estará en: (90 + 270) mod 360 = 360 mod 360 = 0° ✓
+            var anguloRotacion = anguloMedio === 0 ? 0 : 360 - anguloMedio;
             
             console.log('[RULETA] ========================================');
             console.log('[RULETA] Premio encontrado:', premioGanado);
             console.log('[RULETA] Sector visual:', anguloAcumulado.toFixed(1) + '°-' + (anguloAcumulado + anguloSector).toFixed(1) + '°');
             console.log('[RULETA] Centro del sector:', anguloMedio.toFixed(1) + '°');
-            console.log('[RULETA] Rotación calculada (NUEVO MÉTODO):', anguloRotacion.toFixed(1) + '° (negativo = antihorario)');
-            console.log('[RULETA] Verificación: Sector en ' + anguloMedio.toFixed(1) + '° + rotación ' + anguloRotacion.toFixed(1) + '° = ' + ((anguloMedio + anguloRotacion + 360) % 360).toFixed(1) + '° (debe ser 0°)');
+            console.log('[RULETA] Rotación calculada:', anguloRotacion.toFixed(1) + '° (sentido horario)');
+            console.log('[RULETA] Verificación: Sector en ' + anguloMedio.toFixed(1) + '° + rotación ' + anguloRotacion.toFixed(1) + '° = ' + ((anguloMedio + anguloRotacion) % 360).toFixed(1) + '° (debe ser 0°)');
             console.log('[RULETA] ========================================');
             
             return anguloRotacion;
@@ -2088,12 +2086,8 @@ function mostrarAnimacionRuleta(premio) {
     
     var vueltasCompletas = 8 + Math.random() * 4; // Entre 8 y 12 vueltas para más emoción
     // Asegurar que el ángulo final sea positivo y correcto
-    // Si anguloPremio es negativo, sumamos vueltas completas para hacerlo positivo
+    // anguloPremio ya es positivo (360 - anguloMedio), así que solo sumamos vueltas
     var anguloFinal = (vueltasCompletas * 360) + anguloPremio;
-    // Normalizar a un valor positivo (módulo 360 si es muy grande, pero mantener positivo)
-    if (anguloFinal < 0) {
-        anguloFinal = anguloFinal + Math.ceil(Math.abs(anguloFinal) / 360) * 360;
-    }
     
     // Duración de la animación: 11 segundos (más emocionante)
     var duracionAnimacion = 11000; // 11 segundos en milisegundos
