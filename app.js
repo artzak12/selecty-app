@@ -611,7 +611,14 @@ function mostrarDatosCliente() {
     cargarBonosCliente();
     cargarProximoLive();
     cargarOfertas();
-    cargarPuntosCliente(); // 🎯 NUEVO: Cargar puntos del cliente
+    // Solo cargar puntos si no están ya cargados o si el número de cliente cambió
+    // IMPORTANTE: No recargar si acabamos de girar la ruleta (para evitar resetear los puntos)
+    if (!puntosCliente || puntosCliente.numero !== clienteActual.numero) {
+        cargarPuntosCliente(); // 🎯 Cargar puntos del cliente solo si no están cargados
+    } else {
+        // Si ya tenemos puntos cargados, solo actualizar la vista sin recargar desde Supabase
+        actualizarVistaPuntos();
+    }
     cargarHistorialRuleta(); // 🎯 NUEVO: Cargar historial de ruleta
 }
 
@@ -1738,6 +1745,12 @@ async function girarRuleta() {
         var girosTotales = (puntosCliente.giros_totales || 0) + 1;
         
         // Actualizar puntos en Supabase
+        console.log('[RULETA] Actualizando puntos en Supabase:', {
+            numero: clienteActual.numero,
+            puntos_disponibles: puntosNuevos,
+            giros_totales: girosTotales
+        });
+        
         var respUpdate = await supabase
             .from('puntos_clientes')
             .update({
@@ -1747,8 +1760,11 @@ async function girarRuleta() {
             .eq('numero', clienteActual.numero);
         
         if (respUpdate.error) {
+            console.error('[RULETA] Error actualizando puntos:', respUpdate.error);
             throw new Error('Error actualizando puntos: ' + respUpdate.error.message);
         }
+        
+        console.log('[RULETA] Puntos actualizados correctamente en Supabase');
         
         // Registrar tirada en Supabase
         var ahora = new Date();
@@ -1774,6 +1790,13 @@ async function girarRuleta() {
             console.error('Error registrando tirada:', respTirada.error);
         }
         
+        // Verificar que la actualización fue exitosa
+        console.log('[RULETA] Puntos actualizados en Supabase:', {
+            antes: puntosDisponibles,
+            despues: puntosNuevos,
+            giros_totales: girosTotales
+        });
+        
         // Actualizar puntos locales DESPUÉS de que se haya guardado en Supabase
         puntosCliente.puntos_disponibles = puntosNuevos;
         puntosCliente.giros_totales = girosTotales;
@@ -1787,7 +1810,11 @@ async function girarRuleta() {
         // Recargar historial después de un pequeño delay para asegurar que se guardó
         setTimeout(function() {
             cargarHistorialRuleta();
+            // Verificar que los puntos se mantengan actualizados (sin recargar desde Supabase)
+            console.log('[RULETA] Verificando puntos después del giro:', puntosCliente.puntos_disponibles);
         }, 500);
+        
+        // NO recargar puntos desde Supabase aquí - esperar a que el usuario cierre el resultado
         
     } catch (err) {
         console.error('Error girando ruleta:', err);
@@ -1838,8 +1865,8 @@ function mostrarAnimacionRuleta(premio) {
 // Cerrar resultado de la ruleta
 function cerrarResultadoRuleta() {
     document.getElementById('ruleta-resultado').style.display = 'none';
-    // Recargar puntos desde Supabase para asegurar que están actualizados
-    cargarPuntosCliente();
+    // NO recargar puntos aquí - los puntos ya están actualizados localmente
+    // Solo recargar si el usuario hace refresh manual
 }
 
 // Cargar historial de tiradas de ruleta
