@@ -1998,38 +1998,29 @@ function calcularAnguloPremio(premioGanado) {
         var nombrePremioLista = premio.nombre.trim().toUpperCase();
         
         if (nombrePremio === nombrePremioLista) {
-            // CORRECCIÓN DEFINITIVA DEL ÁNGULO
+            // CORRECCIÓN CRÍTICA: El problema puede ser que el conic-gradient en CSS
+            // empieza desde la derecha (90°) en lugar de desde arriba (0°)
             // 
-            // La flecha está fija arriba (0 grados = posición 12 en punto)
-            // El conic-gradient empieza desde arriba (0 grados) y va en sentido horario
-            // El ánguloMedio es la posición del centro del sector desde el inicio (0 grados)
+            // SOLUCIÓN: Ajustar el ángulo del sector restando 90° para compensar
+            // el offset del conic-gradient, y luego calcular la rotación normalmente
             // 
-            // Cuando rotamos la ruleta con rotate(Xdeg) en CSS:
-            // - La rotación es en sentido horario (positivo)
-            // - Si rotamos X grados positivos, todo se mueve X grados en sentido horario
+            // Si el conic-gradient empieza desde la derecha (90°):
+            // - Un sector que visualmente está arriba (0°) en realidad está en 270° en el gradient
+            // - Necesitamos ajustar: anguloMedioAjustado = (anguloMedio - 90 + 360) % 360
+            // - Luego rotamos: anguloRotacion = 360 - anguloMedioAjustado
             // 
-            // Para que el sector que está en anguloMedio quede exactamente arriba (0°):
-            // Necesitamos que después de rotar, el sector en anguloMedio quede en 0°
-            // 
-            // Si rotamos Y grados positivos: (anguloMedio + Y) mod 360 = 0
-            // Esto significa: anguloMedio + Y = 360 (o múltiplos)
-            // Por lo tanto: Y = 360 - anguloMedio
-            // 
-            // Ejemplo con Chuche (naranja) en 270.5°:
-            // Rotamos: 360 - 270.5 = 89.5° (sentido horario)
-            // El sector ahora estará en: (270.5 + 89.5) mod 360 = 360 mod 360 = 0° ✓
-            // 
-            // Ejemplo con NADA (gris) en 90°:
-            // Rotamos: 360 - 90 = 270° (sentido horario)
-            // El sector ahora estará en: (90 + 270) mod 360 = 360 mod 360 = 0° ✓
-            var anguloRotacion = anguloMedio === 0 ? 0 : 360 - anguloMedio;
+            // Pero si el problema es que la rotación está invertida, probemos rotando
+            // en sentido antihorario (negativo) en lugar de horario (positivo)
+            var anguloMedioAjustado = (anguloMedio - 90 + 360) % 360; // Compensar offset de 90°
+            var anguloRotacion = anguloMedioAjustado === 0 ? 0 : 360 - anguloMedioAjustado;
             
             console.log('[RULETA] ========================================');
             console.log('[RULETA] Premio encontrado:', premioGanado);
             console.log('[RULETA] Sector visual:', anguloAcumulado.toFixed(1) + '°-' + (anguloAcumulado + anguloSector).toFixed(1) + '°');
-            console.log('[RULETA] Centro del sector:', anguloMedio.toFixed(1) + '°');
-            console.log('[RULETA] Rotación calculada:', anguloRotacion.toFixed(1) + '° (sentido horario)');
-            console.log('[RULETA] Verificación: Sector en ' + anguloMedio.toFixed(1) + '° + rotación ' + anguloRotacion.toFixed(1) + '° = ' + ((anguloMedio + anguloRotacion) % 360).toFixed(1) + '° (debe ser 0°)');
+            console.log('[RULETA] Centro del sector (original):', anguloMedio.toFixed(1) + '°');
+            console.log('[RULETA] Centro del sector (ajustado -90°):', anguloMedioAjustado.toFixed(1) + '°');
+            console.log('[RULETA] Rotación calculada:', anguloRotacion.toFixed(1) + '°');
+            console.log('[RULETA] Verificación: Sector ajustado ' + anguloMedioAjustado.toFixed(1) + '° + rotación ' + anguloRotacion.toFixed(1) + '° = ' + ((anguloMedioAjustado + anguloRotacion) % 360).toFixed(1) + '° (debe ser 0°)');
             console.log('[RULETA] ========================================');
             
             return anguloRotacion;
