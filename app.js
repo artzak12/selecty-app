@@ -1999,24 +1999,25 @@ function calcularAnguloPremio(premioGanado) {
         
         if (nombrePremio === nombrePremioLista) {
             // CORRECCIÓN DEFINITIVA: El conic-gradient en CSS empieza desde arriba (0°)
-            // pero cuando rotamos con CSS rotate(), necesitamos considerar que:
-            // 1. La flecha está fija arriba (0°)
-            // 2. El sector está en anguloMedio grados desde arriba
-            // 3. Para que el sector quede arriba, rotamos en sentido ANTIHORARIO (negativo)
+            // La flecha está fija arriba (0°)
+            // Para que el sector que está en anguloMedio quede arriba (0°):
+            // Rotamos en sentido HORARIO: 360 - anguloMedio
             // 
-            // SOLUCIÓN: Rotar -anguloMedio grados (sentido antihorario)
-            // Esto hace que el sector que estaba en anguloMedio quede en 0° (arriba)
+            // Ejemplo con NADA (centro en 90°):
+            // Rotamos: 360 - 90 = 270° (horario)
+            // El sector ahora estará en: (90 + 270) mod 360 = 0° ✓
             // 
-            // Ejemplo: Si Chuche está en 270.5°, rotamos -270.5°
-            // El sector ahora estará en: (270.5 - 270.5) mod 360 = 0° ✓
-            var anguloRotacion = anguloMedio === 0 ? 0 : -anguloMedio;
+            // Ejemplo con Chuche (centro en 270.5°):
+            // Rotamos: 360 - 270.5 = 89.5° (horario)
+            // El sector ahora estará en: (270.5 + 89.5) mod 360 = 0° ✓
+            var anguloRotacion = anguloMedio === 0 ? 0 : 360 - anguloMedio;
             
             console.log('[RULETA] ========================================');
             console.log('[RULETA] Premio encontrado:', premioGanado);
             console.log('[RULETA] Sector visual:', anguloAcumulado.toFixed(1) + '°-' + (anguloAcumulado + anguloSector).toFixed(1) + '°');
             console.log('[RULETA] Centro del sector:', anguloMedio.toFixed(1) + '°');
-            console.log('[RULETA] Rotación calculada (NUEVO MÉTODO - ANTIHORARIO):', anguloRotacion.toFixed(1) + '°');
-            console.log('[RULETA] Verificación: Sector ' + anguloMedio.toFixed(1) + '° + rotación ' + anguloRotacion.toFixed(1) + '° = ' + ((anguloMedio + anguloRotacion + 360) % 360).toFixed(1) + '° (debe ser 0°)');
+            console.log('[RULETA] Rotación calculada (HORARIO):', anguloRotacion.toFixed(1) + '°');
+            console.log('[RULETA] Verificación: Sector ' + anguloMedio.toFixed(1) + '° + rotación ' + anguloRotacion.toFixed(1) + '° = ' + ((anguloMedio + anguloRotacion) % 360).toFixed(1) + '° (debe ser 0°)');
             console.log('[RULETA] ========================================');
             
             return anguloRotacion;
@@ -2072,13 +2073,9 @@ function mostrarAnimacionRuleta(premio) {
     console.log('[RULETA] Premio ganado:', premio, 'Ángulo calculado:', anguloPremio);
     
     var vueltasCompletas = 8 + Math.random() * 4; // Entre 8 y 12 vueltas para más emoción
-            // Asegurar que el ángulo final sea positivo y correcto
-            // anguloPremio puede ser negativo (rotación antihoraria), así que normalizamos
-            var anguloFinal = (vueltasCompletas * 360) + anguloPremio;
-            // Normalizar a un valor positivo (módulo 360 si es muy grande, pero mantener positivo)
-            if (anguloFinal < 0) {
-                anguloFinal = anguloFinal + Math.ceil(Math.abs(anguloFinal) / 360) * 360;
-            }
+    // Asegurar que el ángulo final sea positivo y correcto
+    // anguloPremio ya es positivo (360 - anguloMedio), así que solo sumamos vueltas
+    var anguloFinal = (vueltasCompletas * 360) + anguloPremio;
     
     // Duración de la animación: 11 segundos (más emocionante)
     var duracionAnimacion = 11000; // 11 segundos en milisegundos
