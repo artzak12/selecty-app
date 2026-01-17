@@ -484,6 +484,27 @@ main { padding: 20px; max-width: 600px; margin: 0 auto; }
     color: var(--text-secondary);
 }
 
+.ruleta-premio.girando {
+    color: var(--primary);
+}
+
+.ruleta-girando {
+    font-size: 64px;
+    animation: girar-ruleta 0.5s linear infinite;
+    margin-bottom: 10px;
+}
+
+@keyframes girar-ruleta {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.ruleta-texto {
+    font-size: 18px;
+    color: var(--text-secondary);
+    margin-top: 10px;
+}
+
 .premio-ganado {
     display: block;
     font-size: 20px;
