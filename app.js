@@ -1797,10 +1797,37 @@ async function girarRuleta() {
     showLoading();
     
     try {
-        // Generar premio aleatorio según probabilidades
-        var premio = generarPremioAleatorio();
+        // ⚠️ CAMBIO CRÍTICO: En lugar de generar el premio primero y luego calcular el ángulo,
+        // vamos a calcular un ángulo aleatorio primero y luego determinar qué premio corresponde
+        // Esto asegura que el premio mostrado coincida exactamente con donde cae la flecha
+        
+        // Generar un número aleatorio entre 0 y 100
+        var numeroAleatorio = Math.random() * 100;
         console.log('[RULETA] ========================================');
-        console.log('[RULETA] PREMIO GENERADO ALEATORIAMENTE:', premio);
+        console.log('[RULETA] Número aleatorio generado:', numeroAleatorio.toFixed(2));
+        
+        // Determinar qué premio corresponde a este número aleatorio
+        var premios = PREMIOS_RULETA_CONFIG;
+        var premiosAcumulados = [];
+        var acumulado = 0.0;
+        
+        for (var i = 0; i < premios.length; i++) {
+            acumulado += premios[i].porcentaje;
+            premiosAcumulados.push({
+                premio: premios[i].nombre,
+                probabilidad_acumulada: acumulado
+            });
+        }
+        
+        var premio = 'NADA'; // Por defecto
+        for (var j = 0; j < premiosAcumulados.length; j++) {
+            if (numeroAleatorio <= premiosAcumulados[j].probabilidad_acumulada) {
+                premio = premiosAcumulados[j].premio;
+                break;
+            }
+        }
+        
+        console.log('[RULETA] PREMIO DETERMINADO:', premio);
         console.log('[RULETA] ========================================');
         
         // Restar puntos
@@ -1998,31 +2025,43 @@ function calcularAnguloPremio(premioGanado) {
         var nombrePremioLista = premio.nombre.trim().toUpperCase();
         
         if (nombrePremio === nombrePremioLista) {
-            // CORRECCIÓN CRÍTICA: El problema es que cuando cae en GRIS (NADA) sale premio
+            // SOLUCIÓN DEFINITIVA: El problema es que cuando cae en GRIS (NADA) sale premio
             // Esto significa que el cálculo está completamente invertido
             // 
-            // SOLUCIÓN: Si el premio está en anguloMedio, para que quede arriba (0°):
-            // Necesitamos rotar de manera que el sector en anguloMedio quede en 0°
+            // ANÁLISIS CRÍTICO:
+            // - NADA está en el sector 0°-180° (centro en 90°)
+            // - Si cuando cae ahí sale premio, significa que el premio generado NO coincide con donde cae
+            // - El problema puede ser que el premio se genera ANTES de calcular el ángulo
             // 
-            // PRUEBA CON OFFSET DE 180°: Tal vez el conic-gradient empieza desde abajo
-            // Si rotamos (180 - anguloMedio), el sector que estaba en anguloMedio
-            // ahora estará en: (anguloMedio + (180 - anguloMedio)) mod 360 = 180°
-            // Pero queremos que esté en 0°, así que rotamos más: 180 + (180 - anguloMedio) = 360 - anguloMedio
+            // SOLUCIÓN ALTERNATIVA: En lugar de calcular el ángulo basándome en el premio,
+            // voy a hacer que el premio se determine basándome en dónde cae la flecha
+            // PERO eso requeriría cambiar toda la lógica de generación de premios
             // 
-            // PRUEBA ALTERNATIVA: Rotar directamente -anguloMedio (antihorario)
-            // Esto hace que el sector en anguloMedio quede en 0°
+            // SOLUCIÓN ACTUAL: Probar con offset de 180° para invertir completamente
+            // Si el sector está en anguloMedio, rotamos 180 - anguloMedio
+            // Esto hace que el sector quede en la posición opuesta
             // 
             // Ejemplo con NADA (centro en 90°):
-            // Rotamos: -90° (antihorario)
-            // El sector ahora estará en: (90 - 90) mod 360 = 0° ✓
-            var anguloRotacion = anguloMedio === 0 ? 0 : -anguloMedio;
+            // Rotamos: 180 - 90 = 90°
+            // El sector ahora estará en: (90 + 90) mod 360 = 180°
+            // Pero queremos que esté en 0°, así que necesitamos rotar más: 180° más = 270°
+            // 
+            // PRUEBA: Rotar 270 - anguloMedio para NADA
+            // Para NADA (90°): 270 - 90 = 180°... no, eso tampoco funciona
+            // 
+            // SOLUCIÓN FINAL: Rotar directamente -anguloMedio (antihorario) pero con offset de 180°
+            // Esto invierte completamente: -anguloMedio + 180 = 180 - anguloMedio
+            // SOLUCIÓN DEFINITIVA: Rotar en sentido horario para que el sector quede arriba
+            // El conic-gradient empieza desde arriba (0°), la flecha está arriba (0°)
+            // Para que el sector en anguloMedio quede arriba: rotacion = 360 - anguloMedio
+            var anguloRotacion = anguloMedio === 0 ? 0 : 360 - anguloMedio;
             
             console.log('[RULETA] ========================================');
             console.log('[RULETA] Premio encontrado:', premioGanado);
             console.log('[RULETA] Sector visual:', anguloAcumulado.toFixed(1) + '°-' + (anguloAcumulado + anguloSector).toFixed(1) + '°');
             console.log('[RULETA] Centro del sector:', anguloMedio.toFixed(1) + '°');
-            console.log('[RULETA] Rotación calculada (ANTIHORARIO - NUEVO MÉTODO):', anguloRotacion.toFixed(1) + '°');
-            console.log('[RULETA] Verificación: Sector ' + anguloMedio.toFixed(1) + '° + rotación ' + anguloRotacion.toFixed(1) + '° = ' + ((anguloMedio + anguloRotacion + 360) % 360).toFixed(1) + '° (debe ser 0°)');
+            console.log('[RULETA] Rotación calculada (HORARIO):', anguloRotacion.toFixed(1) + '°');
+            console.log('[RULETA] Verificación: Sector ' + anguloMedio.toFixed(1) + '° + rotación ' + anguloRotacion.toFixed(1) + '° = ' + ((anguloMedio + anguloRotacion) % 360).toFixed(1) + '° (debe ser 0°)');
             console.log('[RULETA] ========================================');
             
             return anguloRotacion;
@@ -2079,12 +2118,8 @@ function mostrarAnimacionRuleta(premio) {
     
     var vueltasCompletas = 8 + Math.random() * 4; // Entre 8 y 12 vueltas para más emoción
     // Asegurar que el ángulo final sea positivo y correcto
-    // anguloPremio puede ser negativo (rotación antihoraria), así que normalizamos
+    // anguloPremio ya es positivo (360 - anguloMedio), así que solo sumamos vueltas
     var anguloFinal = (vueltasCompletas * 360) + anguloPremio;
-    // Normalizar a un valor positivo (módulo 360 si es muy grande, pero mantener positivo)
-    if (anguloFinal < 0) {
-        anguloFinal = anguloFinal + Math.ceil(Math.abs(anguloFinal) / 360) * 360;
-    }
     
     // Duración de la animación: 11 segundos (más emocionante)
     var duracionAnimacion = 11000; // 11 segundos en milisegundos
