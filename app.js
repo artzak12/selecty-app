@@ -2068,9 +2068,37 @@ function calcularAnguloPremio(premioGanado) {
             // PERO si cuando cae en NADA (90°) sale premio, significa que está apuntando al sector opuesto
             // Esto sugiere que necesitamos rotar en sentido ANTIHORARIO: -anguloMedio
             // 
-            // PRUEBA FINAL: Rotar -anguloMedio (antihorario) para que el sector quede arriba
-            // Para NADA (90°): rotamos -90°, el sector ahora estará en (90 - 90) mod 360 = 0° ✓
-            var anguloRotacion = anguloMedio === 0 ? 0 : -anguloMedio;
+            // SOLUCIÓN FINAL: El problema es que cuando cae en GRIS (NADA) sale premio
+            // Esto significa que el cálculo está completamente invertido
+            // 
+            // El conic-gradient empieza desde arriba (0°) y va en sentido horario
+            // La flecha está fija arriba (0°)
+            // Cuando rotamos con rotate() positivo, todo se mueve en sentido horario
+            // 
+            // Si NADA está en 0°-180° (centro en 90°), y cuando cae ahí sale premio,
+            // significa que está apuntando al sector opuesto (180°-360°)
+            // 
+            // SOLUCIÓN: Rotar 180° más para invertir completamente
+            // Para que el sector en anguloMedio quede arriba: rotacion = 180 - anguloMedio
+            // Esto invierte completamente la posición
+            // 
+            // Ejemplo con NADA (centro en 90°):
+            // Rotamos: 180 - 90 = 90°
+            // El sector ahora estará en: (90 + 90) mod 360 = 180°
+            // Pero queremos que esté en 0°, así que rotamos más: 180° más = 270°
+            // 
+            // PRUEBA FINAL: Rotar 270 - anguloMedio
+            // Para NADA (90°): 270 - 90 = 180°... no funciona
+            // 
+            // SOLUCIÓN FINAL: Rotar 180 + anguloMedio para invertir completamente
+            // Para NADA (90°): 180 + 90 = 270°
+            // El sector ahora estará en: (90 + 270) mod 360 = 0° ✓
+            // 
+            // Esto funciona porque:
+            // - El conic-gradient empieza desde arriba (0°) y va en sentido horario
+            // - La flecha está fija arriba (0°)
+            // - Cuando rotamos 270° en sentido horario, el sector que estaba en 90° ahora está en 0°
+            var anguloRotacion = anguloMedio === 0 ? 180 : (180 + anguloMedio);
             
             console.log('[RULETA] ========================================');
             console.log('[RULETA] Premio encontrado:', premioGanado);
