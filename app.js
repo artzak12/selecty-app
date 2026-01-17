@@ -1674,6 +1674,21 @@ async function cargarPuntosCliente() {
     }
 }
 
+// Función para extraer el escudo del nombre del nivel
+function obtenerEscudoNivel(nombreNivel) {
+    if (!nombreNivel) return '🌱';
+    // Extraer el primer emoji del nombre (ej: "🌱 Novato" -> "🌱")
+    var match = nombreNivel.match(/^[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/u);
+    return match ? match[0] : '🌱';
+}
+
+// Función para extraer el nombre sin el emoji
+function obtenerNombreSinEscudo(nombreNivel) {
+    if (!nombreNivel) return 'Novato';
+    // Remover el primer emoji y espacios iniciales
+    return nombreNivel.replace(/^[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]\s*/u, '').trim() || 'Novato';
+}
+
 // Actualizar la vista de puntos
 function actualizarVistaPuntos() {
     // Asegurarse de que los elementos existan antes de actualizarlos
@@ -1681,6 +1696,12 @@ function actualizarVistaPuntos() {
     var puntosAcumuladosEl = document.getElementById('puntos-acumulados');
     var nivelActualEl = document.getElementById('nivel-actual');
     var btnRuleta = document.getElementById('btn-girar-ruleta');
+    
+    // Elementos del nivel display (debajo del saldo)
+    var nivelDisplay = document.getElementById('nivel-display');
+    var nivelEscudo = document.getElementById('nivel-escudo');
+    var nivelNombre = document.getElementById('nivel-nombre');
+    var nivelNumero = document.getElementById('nivel-numero');
     
     if (!puntosDisponiblesEl || !puntosAcumuladosEl || !nivelActualEl || !btnRuleta) {
         return; // Los elementos aún no están en el DOM
@@ -1701,10 +1722,19 @@ function actualizarVistaPuntos() {
     // Asegurar que los valores sean números
     var puntosDisp = parseInt(puntosCliente.puntos_disponibles) || 0;
     var puntosAcum = parseInt(puntosCliente.puntos_acumulados) || 0;
+    var nivelActual = parseInt(puntosCliente.nivel_actual) || 1;
+    var nombreNivel = puntosCliente.nombre_nivel || '🌱 Novato';
     
     puntosDisponiblesEl.textContent = puntosDisp;
     puntosAcumuladosEl.textContent = puntosAcum;
-    nivelActualEl.textContent = puntosCliente.nombre_nivel || '🌱 Novato';
+    nivelActualEl.textContent = nombreNivel;
+    
+    // Actualizar el nivel display debajo del saldo
+    if (nivelDisplay && nivelEscudo && nivelNombre && nivelNumero) {
+        nivelEscudo.textContent = obtenerEscudoNivel(nombreNivel);
+        nivelNombre.textContent = obtenerNombreSinEscudo(nombreNivel);
+        nivelNumero.textContent = nivelActual;
+    }
     
     // Habilitar/deshabilitar botón de ruleta según puntos disponibles
     var puntosDisponibles = puntosDisp;
@@ -1894,10 +1924,12 @@ async function girarRuleta() {
     }
 }
 
-// Mostrar animación de ruleta y resultado (MEJORADA)
+// Mostrar animación de ruleta y resultado (MEJORADA CON RULETA VISUAL)
 function mostrarAnimacionRuleta(premio) {
     var resultadoDiv = document.getElementById('ruleta-resultado');
     var premioText = document.getElementById('ruleta-premio-text');
+    var ruletaVisual = document.getElementById('ruleta-visual');
+    var ruletaContainer = document.getElementById('ruleta-visual-container');
     
     // Ocultar botón de ruleta temporalmente
     var btnRuleta = document.getElementById('btn-girar-ruleta');
@@ -1905,33 +1937,51 @@ function mostrarAnimacionRuleta(premio) {
         btnRuleta.style.display = 'none';
     }
     
-    // Mostrar animación de ruleta girando con efectos mejorados
+    // Mostrar contenedor de resultado
     resultadoDiv.style.display = 'block';
     resultadoDiv.style.animation = 'none';
     void resultadoDiv.offsetWidth; // Forzar reflow
     resultadoDiv.style.animation = 'pulse-glow 0.5s ease-in-out';
     
-    // Crear múltiples iconos girando para efecto más llamativo
-    var iconosGirando = '';
-    for (var i = 0; i < 3; i++) {
-        iconosGirando += '<span class="ruleta-girando" style="animation-delay: ' + (i * 0.1) + 's;">🎰</span>';
-    }
+    // Mostrar ruleta visual girando
+    ruletaContainer.style.display = 'block';
+    premioText.style.display = 'none';
     
-    premioText.innerHTML = '<div style="display: flex; justify-content: center; gap: 10px; flex-wrap: wrap;">' + iconosGirando + '</div><div class="ruleta-texto">🎲 Girando la ruleta... 🎲</div>';
-    premioText.className = 'ruleta-premio girando';
+    // Resetear rotación de la ruleta
+    if (ruletaVisual) {
+        ruletaVisual.style.transform = 'rotate(0deg)';
+        ruletaVisual.style.transition = 'none';
+    }
     
     // Efectos de partículas/confeti durante el giro
     crearEfectosGiro();
+    
+    // Calcular rotación final (múltiples vueltas + posición aleatoria)
+    var vueltasCompletas = 5 + Math.random() * 3; // Entre 5 y 8 vueltas
+    var anguloFinal = (vueltasCompletas * 360) + (Math.random() * 360);
+    
+    // Iniciar animación de giro
+    setTimeout(function() {
+        if (ruletaVisual) {
+            ruletaVisual.style.transition = 'transform 2.5s cubic-bezier(0.4, 0, 0.2, 1)';
+            ruletaVisual.style.transform = 'rotate(' + anguloFinal + 'deg)';
+        }
+    }, 50);
     
     // Simular giro de ruleta (2.5 segundos para más dramatismo)
     setTimeout(function() {
         // Detener efectos
         detenerEfectosGiro();
         
+        // Ocultar ruleta visual
+        ruletaContainer.style.display = 'none';
+        premioText.style.display = 'block';
+        
         if (premio === 'NADA') {
-            premioText.innerHTML = '<div style="font-size: 48px; margin-bottom: 10px;">😔</div><span class="premio-nada">No has ganado nada</span><div style="font-size: 14px; color: var(--text-secondary); margin-top: 10px;">¡Sigue intentando!</div>';
+            premioText.innerHTML = '<div style="font-size: 48px; margin-bottom: 10px; animation: celebrate 0.6s ease-out;">😔</div><span class="premio-nada">No has ganado nada</span><div style="font-size: 14px; color: var(--text-secondary); margin-top: 10px;">¡Sigue intentando!</div>';
             premioText.className = 'ruleta-premio nada';
             resultadoDiv.style.borderColor = 'var(--text-secondary)';
+            resultadoDiv.style.boxShadow = '0 0 20px rgba(128, 128, 128, 0.3)';
         } else {
             // Efecto de celebración para premios
             crearEfectosCelebracion();
@@ -1948,7 +1998,7 @@ function mostrarAnimacionRuleta(premio) {
         
         // Enviar notificación
         if (premio !== 'NADA') {
-            enviarNotificacion('🎰 ¡Premio en la ruleta!', 'Has ganado: ' + premio, '🎰');
+            enviarNotificacion('🎡 ¡Premio en la ruleta!', 'Has ganado: ' + premio, '🎡');
         }
     }, 2500);
 }
@@ -2007,11 +2057,25 @@ function crearEfectosCelebracion() {
 // Cerrar resultado de la ruleta
 function cerrarResultadoRuleta() {
     var resultadoDiv = document.getElementById('ruleta-resultado');
+    var ruletaContainer = document.getElementById('ruleta-visual-container');
+    var premioText = document.getElementById('ruleta-premio-text');
+    
     if (resultadoDiv) {
         resultadoDiv.style.display = 'none';
         resultadoDiv.style.borderColor = 'var(--primary)';
         resultadoDiv.style.boxShadow = '0 0 30px rgba(255, 215, 0, 0.3)';
     }
+    
+    // Ocultar ruleta visual si está visible
+    if (ruletaContainer) {
+        ruletaContainer.style.display = 'none';
+    }
+    
+    // Mostrar texto de premio por si estaba oculto
+    if (premioText) {
+        premioText.style.display = 'block';
+    }
+    
     // NO recargar puntos aquí - los puntos ya están actualizados localmente
     // Solo recargar si el usuario hace refresh manual
 }
@@ -2131,5 +2195,23 @@ function toggleSeccion(seccion) {
         contenido.style.display = 'none';
         toggle.textContent = '▼';
         toggle.style.transform = 'rotate(0deg)';
+    }
+}
+
+// Mostrar modal de ayuda de la ruleta
+function mostrarAyudaRuleta() {
+    var modal = document.getElementById('modal-ayuda-ruleta');
+    if (modal) {
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden'; // Prevenir scroll del body
+    }
+}
+
+// Cerrar modal de ayuda de la ruleta
+function cerrarAyudaRuleta() {
+    var modal = document.getElementById('modal-ayuda-ruleta');
+    if (modal) {
+        modal.classList.remove('active');
+        document.body.style.overflow = ''; // Restaurar scroll del body
     }
 }
