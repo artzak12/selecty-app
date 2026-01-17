@@ -1822,10 +1822,17 @@ async function girarRuleta() {
                 hora: hora,
                 premio: premio,
                 gano_premio: premio !== 'NADA'
-            });
+            })
+            .select(); // Añadir select() para obtener los datos insertados
         
         if (respTirada.error) {
-            console.error('Error registrando tirada:', respTirada.error);
+            console.error('[RULETA] Error registrando tirada:', respTirada.error);
+            console.error('[RULETA] Detalles del error:', JSON.stringify(respTirada.error, null, 2));
+        } else {
+            console.log('[RULETA] Tirada registrada correctamente:', respTirada.data);
+            if (respTirada.data && respTirada.data.length > 0) {
+                console.log('[RULETA] ID de la tirada:', respTirada.data[0].id);
+            }
         }
         
         // Verificar que la actualización fue exitosa
