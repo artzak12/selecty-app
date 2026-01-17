@@ -1765,6 +1765,26 @@ async function girarRuleta() {
         }
         
         console.log('[RULETA] Puntos actualizados correctamente en Supabase');
+        console.log('[RULETA] Respuesta de Supabase:', respUpdate);
+        
+        // Verificar que los puntos se guardaron correctamente leyendo desde Supabase
+        var respVerificar = await supabase
+            .from('puntos_clientes')
+            .select('puntos_disponibles, giros_totales')
+            .eq('numero', clienteActual.numero)
+            .maybeSingle();
+        
+        if (respVerificar.error) {
+            console.error('[RULETA] Error verificando puntos:', respVerificar.error);
+        } else if (respVerificar.data) {
+            var puntosVerificados = respVerificar.data.puntos_disponibles;
+            console.log('[RULETA] Puntos verificados en Supabase:', puntosVerificados);
+            if (puntosVerificados !== puntosNuevos) {
+                console.warn('[RULETA] ADVERTENCIA: Los puntos en Supabase no coinciden! Esperado:', puntosNuevos, 'Encontrado:', puntosVerificados);
+            } else {
+                console.log('[RULETA] OK: Los puntos se guardaron correctamente en Supabase');
+            }
+        }
         
         // Registrar tirada en Supabase
         var ahora = new Date();
