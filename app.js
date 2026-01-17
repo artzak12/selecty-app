@@ -943,7 +943,11 @@ function calcularContadorOferta(fechaFin) {
 
 function renderizarOfertas() {
     var listaOfertas = document.getElementById('lista-ofertas');
-    if (!listaOfertas || !window.ofertasActivas) return;
+    var listaOfertasDesplegable = document.getElementById('lista-ofertas-desplegable');
+    var emptyOfertas = document.getElementById('empty-ofertas');
+    var emptyOfertasDesplegable = document.getElementById('empty-ofertas-desplegable');
+    
+    if (!window.ofertasActivas) return;
     
     var html = '';
     for (var i = 0; i < window.ofertasActivas.length; i++) {
@@ -968,7 +972,17 @@ function renderizarOfertas() {
         html += '</div>';
         html += '</div>';
     }
-    listaOfertas.innerHTML = html;
+    // Renderizar en ambos contenedores (pestaña y desplegable)
+    if (listaOfertas) {
+        listaOfertas.innerHTML = html;
+        if (emptyOfertas) emptyOfertas.style.display = 'none';
+    }
+    if (listaOfertasDesplegable) {
+        listaOfertasDesplegable.innerHTML = html;
+        if (emptyOfertasDesplegable) {
+            emptyOfertasDesplegable.style.display = window.ofertasActivas.length === 0 ? 'block' : 'none';
+        }
+    }
 }
 
 async function cargarOfertas() {
@@ -982,11 +996,15 @@ async function cargarOfertas() {
             .order('created_at', { ascending: false });
         
         var listaOfertas = document.getElementById('lista-ofertas');
+        var listaOfertasDesplegable = document.getElementById('lista-ofertas-desplegable');
         var emptyOfertas = document.getElementById('empty-ofertas');
+        var emptyOfertasDesplegable = document.getElementById('empty-ofertas-desplegable');
         
         if (!resp.data || resp.data.length === 0) {
-            listaOfertas.style.display = 'none';
-            emptyOfertas.style.display = 'block';
+            if (listaOfertas) listaOfertas.style.display = 'none';
+            if (emptyOfertas) emptyOfertas.style.display = 'block';
+            if (listaOfertasDesplegable) listaOfertasDesplegable.style.display = 'none';
+            if (emptyOfertasDesplegable) emptyOfertasDesplegable.style.display = 'block';
             return;
         }
         
@@ -1013,13 +1031,17 @@ async function cargarOfertas() {
         });
         
         if (ofertasValidas.length === 0) {
-            listaOfertas.style.display = 'none';
-            emptyOfertas.style.display = 'block';
+            if (listaOfertas) listaOfertas.style.display = 'none';
+            if (emptyOfertas) emptyOfertas.style.display = 'block';
+            if (listaOfertasDesplegable) listaOfertasDesplegable.style.display = 'none';
+            if (emptyOfertasDesplegable) emptyOfertasDesplegable.style.display = 'block';
             return;
         }
         
-        listaOfertas.style.display = 'flex';
-        emptyOfertas.style.display = 'none';
+        if (listaOfertas) listaOfertas.style.display = 'flex';
+        if (emptyOfertas) emptyOfertas.style.display = 'none';
+        if (listaOfertasDesplegable) listaOfertasDesplegable.style.display = 'flex';
+        if (emptyOfertasDesplegable) emptyOfertasDesplegable.style.display = 'none';
         
         // Guardar ofertas para el contador
         window.ofertasActivas = ofertasValidas;
@@ -1872,7 +1894,7 @@ async function girarRuleta() {
     }
 }
 
-// Mostrar animación de ruleta y resultado
+// Mostrar animación de ruleta y resultado (MEJORADA)
 function mostrarAnimacionRuleta(premio) {
     var resultadoDiv = document.getElementById('ruleta-resultado');
     var premioText = document.getElementById('ruleta-premio-text');
@@ -1883,19 +1905,40 @@ function mostrarAnimacionRuleta(premio) {
         btnRuleta.style.display = 'none';
     }
     
-    // Mostrar animación de ruleta girando
+    // Mostrar animación de ruleta girando con efectos mejorados
     resultadoDiv.style.display = 'block';
-    premioText.innerHTML = '<div class="ruleta-girando">🎰</div><div class="ruleta-texto">Girando...</div>';
+    resultadoDiv.style.animation = 'none';
+    void resultadoDiv.offsetWidth; // Forzar reflow
+    resultadoDiv.style.animation = 'pulse-glow 0.5s ease-in-out';
+    
+    // Crear múltiples iconos girando para efecto más llamativo
+    var iconosGirando = '';
+    for (var i = 0; i < 3; i++) {
+        iconosGirando += '<span class="ruleta-girando" style="animation-delay: ' + (i * 0.1) + 's;">🎰</span>';
+    }
+    
+    premioText.innerHTML = '<div style="display: flex; justify-content: center; gap: 10px; flex-wrap: wrap;">' + iconosGirando + '</div><div class="ruleta-texto">🎲 Girando la ruleta... 🎲</div>';
     premioText.className = 'ruleta-premio girando';
     
-    // Simular giro de ruleta (2 segundos)
+    // Efectos de partículas/confeti durante el giro
+    crearEfectosGiro();
+    
+    // Simular giro de ruleta (2.5 segundos para más dramatismo)
     setTimeout(function() {
+        // Detener efectos
+        detenerEfectosGiro();
+        
         if (premio === 'NADA') {
-            premioText.innerHTML = '<span class="premio-nada">😔 No has ganado nada</span>';
+            premioText.innerHTML = '<div style="font-size: 48px; margin-bottom: 10px;">😔</div><span class="premio-nada">No has ganado nada</span><div style="font-size: 14px; color: var(--text-secondary); margin-top: 10px;">¡Sigue intentando!</div>';
             premioText.className = 'ruleta-premio nada';
+            resultadoDiv.style.borderColor = 'var(--text-secondary)';
         } else {
-            premioText.innerHTML = '<span class="premio-ganado">🎉 ¡Has ganado!</span><br><span class="premio-nombre">' + premio + '</span>';
+            // Efecto de celebración para premios
+            crearEfectosCelebracion();
+            premioText.innerHTML = '<div style="font-size: 64px; margin-bottom: 15px; animation: celebrate 0.6s ease-out;">🎉</div><span class="premio-ganado">¡FELICIDADES!</span><br><span class="premio-nombre">' + premio + '</span><div style="font-size: 14px; color: var(--success); margin-top: 15px;">✨ ¡Premio añadido a tu cuenta! ✨</div>';
             premioText.className = 'ruleta-premio ganado';
+            resultadoDiv.style.borderColor = 'var(--success)';
+            resultadoDiv.style.boxShadow = '0 0 40px rgba(0, 210, 106, 0.5)';
         }
         
         // Mostrar botón de nuevo
@@ -1907,12 +1950,68 @@ function mostrarAnimacionRuleta(premio) {
         if (premio !== 'NADA') {
             enviarNotificacion('🎰 ¡Premio en la ruleta!', 'Has ganado: ' + premio, '🎰');
         }
-    }, 2000);
+    }, 2500);
+}
+
+// Funciones auxiliares para efectos visuales
+function crearEfectosGiro() {
+    var resultadoDiv = document.getElementById('ruleta-resultado');
+    if (!resultadoDiv) return;
+    
+    // Crear partículas girando alrededor
+    for (var i = 0; i < 8; i++) {
+        var particula = document.createElement('div');
+        particula.className = 'particula-giro';
+        particula.style.cssText = 'position: absolute; width: 6px; height: 6px; background: var(--primary); border-radius: 50%; pointer-events: none;';
+        var angulo = (i * 45) * Math.PI / 180;
+        particula.style.left = '50%';
+        particula.style.top = '50%';
+        particula.style.transform = 'translate(-50%, -50%) translate(' + (Math.cos(angulo) * 60) + 'px, ' + (Math.sin(angulo) * 60) + 'px)';
+        particula.style.animation = 'orbitar 2s linear infinite';
+        particula.style.animationDelay = (i * 0.25) + 's';
+        resultadoDiv.appendChild(particula);
+    }
+}
+
+function detenerEfectosGiro() {
+    var resultadoDiv = document.getElementById('ruleta-resultado');
+    if (!resultadoDiv) return;
+    
+    var particulas = resultadoDiv.querySelectorAll('.particula-giro');
+    particulas.forEach(function(p) { p.remove(); });
+}
+
+function crearEfectosCelebracion() {
+    var resultadoDiv = document.getElementById('ruleta-resultado');
+    if (!resultadoDiv) return;
+    
+    // Crear confeti/estrellas
+    var emojis = ['✨', '⭐', '🎉', '🎊', '💫'];
+    for (var i = 0; i < 12; i++) {
+        setTimeout(function() {
+            var confeti = document.createElement('div');
+            confeti.style.cssText = 'position: absolute; font-size: 20px; pointer-events: none; z-index: 10;';
+            confeti.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+            var x = Math.random() * 100;
+            var y = Math.random() * 100;
+            confeti.style.left = x + '%';
+            confeti.style.top = y + '%';
+            confeti.style.animation = 'confeti-caida 1.5s ease-out forwards';
+            resultadoDiv.appendChild(confeti);
+            
+            setTimeout(function() { confeti.remove(); }, 1500);
+        }, i * 100);
+    }
 }
 
 // Cerrar resultado de la ruleta
 function cerrarResultadoRuleta() {
-    document.getElementById('ruleta-resultado').style.display = 'none';
+    var resultadoDiv = document.getElementById('ruleta-resultado');
+    if (resultadoDiv) {
+        resultadoDiv.style.display = 'none';
+        resultadoDiv.style.borderColor = 'var(--primary)';
+        resultadoDiv.style.boxShadow = '0 0 30px rgba(255, 215, 0, 0.3)';
+    }
     // NO recargar puntos aquí - los puntos ya están actualizados localmente
     // Solo recargar si el usuario hace refresh manual
 }
@@ -2010,4 +2109,27 @@ function generarPremioAleatorio() {
     }
     
     return 'NADA';
+}
+
+// Función para toggle de secciones desplegables
+function toggleSeccion(seccion) {
+    var contenido = document.getElementById('contenido-' + seccion);
+    var toggle = document.getElementById('toggle-' + seccion);
+    
+    if (!contenido || !toggle) return;
+    
+    if (contenido.style.display === 'none') {
+        contenido.style.display = 'block';
+        toggle.textContent = '▲';
+        toggle.style.transform = 'rotate(0deg)';
+        
+        // Si es ofertas, cargar las ofertas si no están cargadas
+        if (seccion === 'ofertas' && (!window.ofertasActivas || window.ofertasActivas.length === 0)) {
+            cargarOfertas();
+        }
+    } else {
+        contenido.style.display = 'none';
+        toggle.textContent = '▼';
+        toggle.style.transform = 'rotate(0deg)';
+    }
 }
