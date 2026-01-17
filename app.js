@@ -1470,7 +1470,12 @@ document.addEventListener('DOMContentLoaded', function() {
     initApp();
     initTabs(); 
     initAdminTabs(); 
-    checkAutoLogin(); 
+    checkAutoLogin();
+    
+    // Crear la ruleta visual al cargar la página
+    setTimeout(function() {
+        crearRuletaVisual();
+    }, 500);
     
     // Eventos adicionales que necesitan elementos del DOM
     var btnBuscarCliente = document.getElementById('btn-buscar-cliente');
@@ -1924,12 +1929,94 @@ async function girarRuleta() {
     }
 }
 
+// Crear ruleta visual con todos los premios
+function crearRuletaVisual() {
+    var ruletaVisual = document.getElementById('ruleta-visual');
+    if (!ruletaVisual) return;
+    
+    // Definir premios con sus porcentajes y colores
+    var premios = [
+        { nombre: 'NADA', porcentaje: 50.0, color: '#666666', color2: '#444444', emoji: '😔' },
+        { nombre: 'Regalo COBRE', porcentaje: 3.0, color: '#CD7F32', color2: '#8B4513', emoji: '🥉' },
+        { nombre: 'Regalo PLATA', porcentaje: 2.5, color: '#C0C0C0', color2: '#808080', emoji: '🥈' },
+        { nombre: 'Regalo ORO', porcentaje: 1.5, color: '#FFD700', color2: '#FFA500', emoji: '🥇' },
+        { nombre: '10€ BONO', porcentaje: 1.7, color: '#4CAF50', color2: '#2E7D32', emoji: '💶' },
+        { nombre: '20€ BONO', porcentaje: 1.0, color: '#2196F3', color2: '#1565C0', emoji: '💶' },
+        { nombre: '30€ BONO', porcentaje: 0.3, color: '#9C27B0', color2: '#6A1B9A', emoji: '💶' },
+        { nombre: '50€ BONO', porcentaje: 0.2, color: '#F44336', color2: '#C62828', emoji: '💶' },
+        { nombre: 'Tortuguita', porcentaje: 9.95, color: '#8BC34A', color2: '#689F38', emoji: '🐢' },
+        { nombre: 'Chuche', porcentaje: 9.95, color: '#FF9800', color2: '#F57C00', emoji: '🍬' },
+        { nombre: 'Panda', porcentaje: 9.95, color: '#000000', color2: '#FFFFFF', emoji: '🐼' },
+        { nombre: 'Cacharrito', porcentaje: 9.95, color: '#607D8B', color2: '#37474F', emoji: '🎮' }
+    ];
+    
+    // Crear conic-gradient con todos los premios
+    var gradientes = [];
+    var anguloAcumulado = 0;
+    
+    for (var i = 0; i < premios.length; i++) {
+        var premio = premios[i];
+        var anguloInicio = anguloAcumulado;
+        var anguloFin = anguloAcumulado + (premio.porcentaje * 3.6); // 3.6 grados por 1%
+        gradientes.push(premio.color + ' ' + anguloInicio + 'deg ' + anguloFin + 'deg');
+        anguloAcumulado = anguloFin;
+    }
+    
+    ruletaVisual.style.background = 'conic-gradient(' + gradientes.join(', ') + ')';
+    
+    // Guardar información de premios para calcular posición
+    ruletaVisual.dataset.premios = JSON.stringify(premios);
+}
+
+// Calcular ángulo exacto donde debe parar según el premio
+function calcularAnguloPremio(premioGanado) {
+    var ruletaVisual = document.getElementById('ruleta-visual');
+    if (!ruletaVisual || !ruletaVisual.dataset.premios) {
+        // Si no hay datos, crear la ruleta primero
+        crearRuletaVisual();
+        ruletaVisual = document.getElementById('ruleta-visual');
+        if (!ruletaVisual || !ruletaVisual.dataset.premios) return 0;
+    }
+    
+    var premios = JSON.parse(ruletaVisual.dataset.premios);
+    var anguloAcumulado = 0;
+    
+    // Buscar el premio y calcular su posición central
+    for (var i = 0; i < premios.length; i++) {
+        var premio = premios[i];
+        var anguloSector = premio.porcentaje * 3.6;
+        var anguloMedio = anguloAcumulado + (anguloSector / 2);
+        
+        // Normalizar nombre del premio para comparación (case-insensitive)
+        var nombrePremio = premioGanado.trim().toUpperCase();
+        var nombrePremioLista = premio.nombre.trim().toUpperCase();
+        
+        if (nombrePremio === nombrePremioLista) {
+            // La flecha está arriba (0 grados), necesitamos rotar la ruleta
+            // para que el centro del sector del premio quede exactamente arriba
+            // Como la ruleta gira en sentido horario, rotamos: 360 - anguloMedio
+            return 360 - anguloMedio;
+        }
+        
+        anguloAcumulado += anguloSector;
+    }
+    
+    // Si no se encuentra el premio, devolver 0
+    console.warn('Premio no encontrado en la ruleta:', premioGanado);
+    return 0;
+}
+
 // Mostrar animación de ruleta y resultado (MEJORADA CON RULETA VISUAL)
 function mostrarAnimacionRuleta(premio) {
     var resultadoDiv = document.getElementById('ruleta-resultado');
     var premioText = document.getElementById('ruleta-premio-text');
     var ruletaVisual = document.getElementById('ruleta-visual');
     var ruletaContainer = document.getElementById('ruleta-visual-container');
+    
+    // Crear ruleta visual si no existe
+    if (ruletaVisual && !ruletaVisual.dataset.premios) {
+        crearRuletaVisual();
+    }
     
     // Ocultar botón de ruleta temporalmente
     var btnRuleta = document.getElementById('btn-girar-ruleta');
@@ -1956,9 +2043,10 @@ function mostrarAnimacionRuleta(premio) {
     // Efectos de partículas/confeti durante el giro
     crearEfectosGiro();
     
-    // Calcular rotación final (múltiples vueltas + posición aleatoria)
+    // Calcular rotación final exacta según el premio
+    var anguloPremio = calcularAnguloPremio(premio);
     var vueltasCompletas = 5 + Math.random() * 3; // Entre 5 y 8 vueltas
-    var anguloFinal = (vueltasCompletas * 360) + (Math.random() * 360);
+    var anguloFinal = (vueltasCompletas * 360) + anguloPremio;
     
     // Iniciar animación de giro
     setTimeout(function() {
