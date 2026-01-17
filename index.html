@@ -102,11 +102,13 @@
             
             <!-- Sección Puntos y Ruleta -->
             <div class="seccion-destacada" id="seccion-puntos">
-                <div class="seccion-header">
+                <div class="seccion-header" onclick="toggleSeccion('puntos')">
                     <span class="seccion-icon">🎰</span>
                     <span class="seccion-titulo">Puntos y Ruleta</span>
+                    <span class="seccion-toggle" id="toggle-puntos">▼</span>
                 </div>
-                <div class="puntos-card">
+                <div class="seccion-contenido" id="contenido-puntos" style="display:none;">
+                    <div class="puntos-card">
                     <div class="puntos-info">
                         <div class="puntos-disponibles">
                             <span class="puntos-label">Puntos disponibles</span>
@@ -131,6 +133,24 @@
                         <button class="btn-cerrar-resultado" onclick="cerrarResultadoRuleta()">Cerrar</button>
                     </div>
                 </div>
+                </div>
+            </div>
+            
+            <!-- Sección Ofertas (desplegable) -->
+            <div class="seccion-destacada" id="seccion-ofertas">
+                <div class="seccion-header" onclick="toggleSeccion('ofertas')">
+                    <span class="seccion-icon">🎁</span>
+                    <span class="seccion-titulo">Ofertas</span>
+                    <span class="seccion-toggle" id="toggle-ofertas">▼</span>
+                </div>
+                <div class="seccion-contenido" id="contenido-ofertas" style="display:none;">
+                    <div id="lista-ofertas-desplegable" class="items-list"></div>
+                    <div id="empty-ofertas-desplegable" class="empty-state">
+                        <div class="empty-icon">🎁</div>
+                        <p>Sin ofertas activas</p>
+                        <span>Estate atento a nuestras promociones</span>
+                    </div>
+                </div>
             </div>
             <!-- Sección Próximos LIVES -->
             <div class="seccion-destacada" id="seccion-lives">
@@ -151,7 +171,6 @@
                 <button class="tab" data-tab="historial">📜 Historial</button>
                 <button class="tab" data-tab="mis-bonos">💳 Mis Bonos</button>
                 <button class="tab" data-tab="ruleta">🎰 Ruleta</button>
-                <button class="tab" data-tab="ofertas">🎁 Ofertas</button>
             </div>
             <div class="tab-content">
                 <div id="tab-en-caja" class="tab-panel active">
@@ -184,14 +203,6 @@
                         <div class="empty-icon">🎰</div>
                         <p>Sin tiradas</p>
                         <span>Aqui apareceran tus tiradas de ruleta</span>
-                    </div>
-                </div>
-                <div id="tab-ofertas" class="tab-panel">
-                    <div id="lista-ofertas" class="items-list"></div>
-                    <div id="empty-ofertas" class="empty-state">
-                        <div class="empty-icon">🎁</div>
-                        <p>Sin ofertas activas</p>
-                        <span>Estate atento a nuestras promociones</span>
                     </div>
                 </div>
             </div>
