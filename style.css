@@ -678,12 +678,15 @@ main { padding: 20px; max-width: 600px; margin: 0 auto; }
     display: flex;
     justify-content: center;
     align-items: center;
+    width: 100%;
+    padding: 0 10px;
 }
 
 .ruleta-visual-wrapper {
     position: relative;
-    width: 280px;
-    height: 280px;
+    width: 100%;
+    max-width: 320px;
+    aspect-ratio: 1;
     margin: 0 auto;
 }
 
@@ -695,20 +698,18 @@ main { padding: 20px; max-width: 600px; margin: 0 auto; }
     overflow: hidden;
     border: 8px solid var(--primary);
     box-shadow: 0 0 30px rgba(255, 215, 0, 0.6), inset 0 0 20px rgba(0, 0, 0, 0.3);
-    background: conic-gradient(
-        #FFD700 0deg 30deg,
-        #C0C0C0 30deg 60deg,
-        #FFD700 60deg 90deg,
-        #CD7F32 90deg 120deg,
-        #FFD700 120deg 150deg,
-        #C0C0C0 150deg 180deg,
-        #FFD700 180deg 210deg,
-        #CD7F32 210deg 240deg,
-        #FFD700 240deg 270deg,
-        #C0C0C0 270deg 300deg,
-        #FFD700 300deg 330deg,
-        #CD7F32 330deg 360deg
-    );
+    transform-origin: center;
+}
+
+/* Responsive para móvil */
+@media (max-width: 480px) {
+    .ruleta-visual-wrapper {
+        max-width: 280px;
+    }
+    
+    .ruleta-visual {
+        border-width: 6px;
+    }
 }
 
 .ruleta-sector {
