@@ -122,9 +122,59 @@ main { padding: 20px; max-width: 600px; margin: 0 auto; }
 .bono-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
 .bono-label { font-size: 14px; color: var(--primary); font-weight: 600; text-transform: uppercase; letter-spacing: 1px; }
 .bono-icon { font-size: 24px; }
-.bono-amount { font-size: 48px; font-weight: 800; color: var(--primary); margin-bottom: 16px; text-shadow: 0 0 20px rgba(255, 215, 0, 0.3); transition: color 0.3s, text-shadow 0.3s; }
+.bono-amount { font-size: 48px; font-weight: 800; color: var(--primary); margin-bottom: 12px; text-shadow: 0 0 20px rgba(255, 215, 0, 0.3); transition: color 0.3s, text-shadow 0.3s; }
 .bono-amount.negativo { color: var(--danger); text-shadow: 0 0 20px rgba(255, 59, 48, 0.4); animation: pulse-danger 2s ease-in-out infinite; }
 @keyframes pulse-danger { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
+
+/* Display del nivel debajo del saldo */
+.nivel-display {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    background: linear-gradient(135deg, rgba(255, 215, 0, 0.15) 0%, rgba(255, 215, 0, 0.05) 100%);
+    border-radius: 12px;
+    border: 1px solid rgba(255, 215, 0, 0.3);
+    margin-top: 8px;
+}
+
+.nivel-escudo {
+    font-size: 32px;
+    line-height: 1;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+    animation: pulse-escudo 2s ease-in-out infinite;
+}
+
+@keyframes pulse-escudo {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+}
+
+.nivel-nombre {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--primary);
+    flex: 1;
+    text-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+}
+
+.nivel-badge {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    background: rgba(255, 255, 255, 0.1);
+    padding: 6px 12px;
+    border-radius: 20px;
+    border: 1px solid rgba(255, 215, 0, 0.2);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.nivel-badge span {
+    color: var(--primary);
+    font-weight: 800;
+}
+
 .bono-details { display: flex; gap: 24px; padding-top: 16px; border-top: 1px solid rgba(255, 215, 0, 0.2); }
 .bono-detail { display: flex; flex-direction: column; gap: 4px; }
 .detail-label { font-size: 12px; color: var(--text-muted); }
@@ -220,6 +270,112 @@ main { padding: 20px; max-width: 600px; margin: 0 auto; }
 .popup-icon { font-size: 48px; display: block; margin-bottom: 12px; }
 .popup-header h3 { font-size: 22px; font-weight: 700; color: var(--primary); }
 .popup-desc { text-align: center; color: var(--text-secondary); font-size: 14px; margin-bottom: 24px; line-height: 1.5; }
+
+/* Modal de Ayuda - Ruleta */
+.ayuda-ruleta-box {
+    max-width: 500px;
+    max-height: 85vh;
+    overflow-y: auto;
+}
+
+.ayuda-ruleta-content {
+    margin-bottom: 24px;
+}
+
+.ayuda-seccion {
+    margin-bottom: 24px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid rgba(255, 215, 0, 0.1);
+}
+
+.ayuda-seccion:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+
+.ayuda-titulo {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--primary);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.ayuda-texto {
+    color: var(--text-secondary);
+    font-size: 14px;
+    line-height: 1.6;
+    margin-bottom: 12px;
+}
+
+.ayuda-lista {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.ayuda-lista li {
+    padding: 8px 12px;
+    margin-bottom: 6px;
+    background: rgba(255, 215, 0, 0.05);
+    border-left: 3px solid var(--primary);
+    border-radius: 4px;
+    color: var(--text-primary);
+    font-size: 14px;
+}
+
+.ayuda-lista li strong {
+    color: var(--primary);
+    font-weight: 700;
+}
+
+.premios-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.premio-item {
+    padding: 10px 12px;
+    background: linear-gradient(135deg, rgba(255, 215, 0, 0.1) 0%, rgba(255, 215, 0, 0.05) 100%);
+    border: 1px solid rgba(255, 215, 0, 0.2);
+    border-radius: 8px;
+    text-align: center;
+    font-size: 13px;
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+.ayuda-nota {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-style: italic;
+    margin-top: 8px;
+    text-align: center;
+}
+
+.btn-cerrar-ayuda {
+    width: 100%;
+    padding: 14px;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+    color: var(--bg-dark);
+    border: none;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s;
+    box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3);
+}
+
+.btn-cerrar-ayuda:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(255, 215, 0, 0.4);
+}
 
 /* ========== ADMIN PANEL ========== */
 .admin-header { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); }
@@ -463,21 +619,43 @@ main { padding: 20px; max-width: 600px; margin: 0 auto; }
 
 .ruleta-resultado {
     margin-top: 20px;
-    padding: 20px;
-    background: rgba(255, 215, 0, 0.1);
-    border-radius: 12px;
-    border: 2px solid var(--primary);
+    padding: 30px;
+    background: linear-gradient(135deg, rgba(255, 215, 0, 0.15) 0%, rgba(255, 215, 0, 0.05) 100%);
+    border-radius: 16px;
+    border: 3px solid var(--primary);
     text-align: center;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 0 30px rgba(255, 215, 0, 0.3);
+}
+
+.ruleta-resultado::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255, 215, 0, 0.1) 0%, transparent 70%);
+    animation: pulse-glow 2s ease-in-out infinite;
+}
+
+@keyframes pulse-glow {
+    0%, 100% { opacity: 0.5; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.1); }
 }
 
 .ruleta-premio {
     font-size: 24px;
     font-weight: 700;
     margin-bottom: 16px;
+    position: relative;
+    z-index: 1;
 }
 
 .ruleta-premio.ganado {
     color: var(--success);
+    animation: celebrate 0.6s ease-out;
 }
 
 .ruleta-premio.nada {
@@ -488,15 +666,133 @@ main { padding: 20px; max-width: 600px; margin: 0 auto; }
     color: var(--primary);
 }
 
-.ruleta-girando {
-    font-size: 64px;
-    animation: girar-ruleta 0.5s linear infinite;
-    margin-bottom: 10px;
+@keyframes celebrate {
+    0% { transform: scale(0.8); opacity: 0; }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); opacity: 1; }
 }
 
-@keyframes girar-ruleta {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+/* Ruleta visual girando */
+.ruleta-visual-container {
+    margin: 20px 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.ruleta-visual-wrapper {
+    position: relative;
+    width: 280px;
+    height: 280px;
+    margin: 0 auto;
+}
+
+.ruleta-visual {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    position: relative;
+    overflow: hidden;
+    border: 8px solid var(--primary);
+    box-shadow: 0 0 30px rgba(255, 215, 0, 0.6), inset 0 0 20px rgba(0, 0, 0, 0.3);
+    background: conic-gradient(
+        #FFD700 0deg 30deg,
+        #C0C0C0 30deg 60deg,
+        #FFD700 60deg 90deg,
+        #CD7F32 90deg 120deg,
+        #FFD700 120deg 150deg,
+        #C0C0C0 150deg 180deg,
+        #FFD700 180deg 210deg,
+        #CD7F32 210deg 240deg,
+        #FFD700 240deg 270deg,
+        #C0C0C0 270deg 300deg,
+        #FFD700 300deg 330deg,
+        #CD7F32 330deg 360deg
+    );
+}
+
+.ruleta-sector {
+    position: absolute;
+    width: 50%;
+    height: 50%;
+    transform-origin: 100% 100%;
+    clip-path: polygon(0 0, 100% 0, 100% 100%);
+}
+
+.ruleta-flecha {
+    position: absolute;
+    top: -15px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 15px solid transparent;
+    border-right: 15px solid transparent;
+    border-top: 30px solid var(--primary);
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
+    z-index: 10;
+    animation: pulse-flecha 0.5s ease-in-out infinite alternate;
+}
+
+@keyframes pulse-flecha {
+    0% { transform: translateX(-50%) scale(1); }
+    100% { transform: translateX(-50%) scale(1.1); }
+}
+
+.ruleta-texto {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--primary);
+    margin-top: 10px;
+    animation: pulse-text 1s ease-in-out infinite;
+}
+
+@keyframes pulse-text {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.8; transform: scale(1.05); }
+}
+
+/* Ajustes para el contenedor de premio cuando se muestra la ruleta */
+.ruleta-premio.girando {
+    min-height: 300px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+@keyframes parpadeo {
+    0% { opacity: 1; }
+    100% { opacity: 0.7; }
+}
+
+.ruleta-texto {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--primary);
+    margin-top: 10px;
+    animation: pulse-text 1s ease-in-out infinite;
+}
+
+@keyframes pulse-text {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.8; transform: scale(1.05); }
+}
+
+@keyframes orbitar {
+    0% { transform: translate(-50%, -50%) rotate(0deg) translateX(60px) rotate(0deg); }
+    100% { transform: translate(-50%, -50%) rotate(360deg) translateX(60px) rotate(-360deg); }
+}
+
+@keyframes confeti-caida {
+    0% {
+        opacity: 1;
+        transform: translateY(0) rotate(0deg) scale(1);
+    }
+    100% {
+        opacity: 0;
+        transform: translateY(100px) rotate(360deg) scale(0.5);
+    }
 }
 
 .ruleta-texto {
@@ -561,7 +857,42 @@ main { padding: 20px; max-width: 600px; margin: 0 auto; }
     display: flex;
     align-items: center;
     gap: 10px;
-    margin-bottom: 12px;
+    margin-bottom: 0;
+    cursor: pointer;
+    user-select: none;
+    padding: 8px;
+    border-radius: 8px;
+    transition: background-color 0.2s;
+    position: relative;
+}
+.seccion-header:hover {
+    background-color: rgba(255, 215, 0, 0.1);
+}
+
+.btn-ayuda-ruleta {
+    position: absolute;
+    right: 35px;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: rgba(255, 215, 0, 0.2);
+    border: 1px solid var(--primary);
+    color: var(--primary);
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    flex-shrink: 0;
+}
+
+.btn-ayuda-ruleta:hover {
+    background: var(--primary);
+    color: var(--bg-dark);
+    transform: scale(1.1);
+    box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
 }
 .seccion-icon {
     font-size: 24px;
@@ -570,6 +901,30 @@ main { padding: 20px; max-width: 600px; margin: 0 auto; }
     font-size: 16px;
     font-weight: 700;
     color: var(--primary);
+    flex: 1;
+}
+.seccion-toggle {
+    font-size: 14px;
+    color: var(--primary);
+    transition: transform 0.3s;
+}
+.seccion-contenido {
+    margin-top: 12px;
+    animation: slideDown 0.3s ease-out;
+    overflow: hidden;
+}
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        max-height: 0;
+    }
+    to {
+        opacity: 1;
+        max-height: 2000px;
+    }
+}
+.seccion-contenido.cerrado {
+    display: none;
 }
 
 /* Live Card */
