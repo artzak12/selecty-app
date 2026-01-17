@@ -2051,10 +2051,26 @@ function calcularAnguloPremio(premioGanado) {
             // 
             // SOLUCIÓN FINAL: Rotar directamente -anguloMedio (antihorario) pero con offset de 180°
             // Esto invierte completamente: -anguloMedio + 180 = 180 - anguloMedio
-            // SOLUCIÓN DEFINITIVA: Rotar en sentido horario para que el sector quede arriba
-            // El conic-gradient empieza desde arriba (0°), la flecha está arriba (0°)
-            // Para que el sector en anguloMedio quede arriba: rotacion = 360 - anguloMedio
-            var anguloRotacion = anguloMedio === 0 ? 0 : 360 - anguloMedio;
+            // SOLUCIÓN DEFINITIVA BASADA EN ANÁLISIS:
+            // NADA está en 0°-180° (centro en 90°)
+            // Si cuando cae ahí sale premio, significa que el cálculo está invertido
+            // 
+            // El conic-gradient en CSS empieza desde arriba (0°) y va en sentido horario
+            // La flecha está fija arriba (0°)
+            // 
+            // Cuando rotamos con CSS rotate() en sentido horario (positivo):
+            // - Si rotamos X grados, todo se mueve X grados en sentido horario
+            // - Para que el sector en anguloMedio quede arriba (0°):
+            //   Necesitamos que después de rotar, el sector en anguloMedio esté en 0°
+            //   Esto significa: (anguloMedio + rotacion) mod 360 = 0
+            //   Por lo tanto: rotacion = 360 - anguloMedio
+            // 
+            // PERO si cuando cae en NADA (90°) sale premio, significa que está apuntando al sector opuesto
+            // Esto sugiere que necesitamos rotar en sentido ANTIHORARIO: -anguloMedio
+            // 
+            // PRUEBA FINAL: Rotar -anguloMedio (antihorario) para que el sector quede arriba
+            // Para NADA (90°): rotamos -90°, el sector ahora estará en (90 - 90) mod 360 = 0° ✓
+            var anguloRotacion = anguloMedio === 0 ? 0 : -anguloMedio;
             
             console.log('[RULETA] ========================================');
             console.log('[RULETA] Premio encontrado:', premioGanado);
