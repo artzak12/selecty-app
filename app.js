@@ -1751,13 +1751,15 @@ async function girarRuleta() {
             giros_totales: girosTotales
         });
         
+        // IMPORTANTE: Usar .select() después del update para obtener los datos actualizados
         var respUpdate = await supabase
             .from('puntos_clientes')
             .update({
                 puntos_disponibles: puntosNuevos,
                 giros_totales: girosTotales
             })
-            .eq('numero', clienteActual.numero);
+            .eq('numero', clienteActual.numero)
+            .select(); // Añadir select() para obtener los datos actualizados
         
         if (respUpdate.error) {
             console.error('[RULETA] Error actualizando puntos:', respUpdate.error);
@@ -1765,9 +1767,12 @@ async function girarRuleta() {
         }
         
         console.log('[RULETA] Puntos actualizados correctamente en Supabase');
-        console.log('[RULETA] Respuesta de Supabase:', respUpdate);
+        console.log('[RULETA] Respuesta de Supabase (UPDATE):', respUpdate);
         
         // Verificar que los puntos se guardaron correctamente leyendo desde Supabase
+        // Esperar un poco para asegurar que la actualización se haya propagado
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
         var respVerificar = await supabase
             .from('puntos_clientes')
             .select('puntos_disponibles, giros_totales')
@@ -1781,9 +1786,22 @@ async function girarRuleta() {
             console.log('[RULETA] Puntos verificados en Supabase:', puntosVerificados);
             if (puntosVerificados !== puntosNuevos) {
                 console.warn('[RULETA] ADVERTENCIA: Los puntos en Supabase no coinciden! Esperado:', puntosNuevos, 'Encontrado:', puntosVerificados);
+                // Intentar actualizar de nuevo si no coinciden
+                console.log('[RULETA] Reintentando actualización...');
+                var respRetry = await supabase
+                    .from('puntos_clientes')
+                    .update({
+                        puntos_disponibles: puntosNuevos,
+                        giros_totales: girosTotales
+                    })
+                    .eq('numero', clienteActual.numero)
+                    .select();
+                console.log('[RULETA] Respuesta del reintento:', respRetry);
             } else {
                 console.log('[RULETA] OK: Los puntos se guardaron correctamente en Supabase');
             }
+        } else {
+            console.warn('[RULETA] No se encontraron datos del cliente en puntos_clientes');
         }
         
         // Registrar tirada en Supabase
