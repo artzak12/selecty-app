@@ -172,7 +172,6 @@ async function verificarCambiosYNotificar() {
                     '💰'
                 );
                 // 🎯 RECARGAR PUNTOS cuando se detecta un nuevo bono
-                console.log('[NOTIFICACIONES] Nuevo bono detectado, recargando puntos...');
                 cargarPuntosCliente();
                 // Actualizar estado anterior
                 estadoAnterior.bonos = respBonos.data.slice(0, 5);
@@ -591,22 +590,49 @@ function mostrarDatosCliente() {
     
     // Actualizar botón de envío
     var statusBar = document.getElementById('status-envio');
+    if (!statusBar) {
+        console.error('Error: No se encontró el elemento status-envio');
+        return;
+    }
+    
     var statusText = statusBar.querySelector('.status-text');
     var statusIcon = statusBar.querySelector('.status-icon');
+    
+    // ⚡ CRÍTICO: Remover cualquier listener anterior para evitar duplicados
+    var nuevoStatusBar = statusBar.cloneNode(true);
+    statusBar.parentNode.replaceChild(nuevoStatusBar, statusBar);
+    statusBar = nuevoStatusBar;
+    
     if (pendientes.length > 0) {
         // Mostrar solo texto sin emoji duplicado (el icono ya está en el HTML)
-        statusText.innerHTML = 'Envía mi caja (' + pendientes.length + ' artículo' + (pendientes.length > 1 ? 's' : '') + ')';
+        if (statusText) {
+            statusText.innerHTML = 'Envía mi caja (' + pendientes.length + ' artículo' + (pendientes.length > 1 ? 's' : '') + ')';
+        }
         statusBar.classList.add('btn-enviar-activo');
         statusBar.classList.remove('btn-enviar-inactivo');
         statusBar.style.cursor = 'pointer';
+        
+        // ⚡ CRÍTICO: Usar addEventListener en lugar de onclick para mayor compatibilidad
+        // Remover listener anterior si existe
+        statusBar.removeEventListener('click', enviarMiCaja);
+        statusBar.addEventListener('click', enviarMiCaja, { once: false });
+        
+        // También mantener onclick como fallback
         statusBar.onclick = enviarMiCaja;
+        
         if (statusIcon) statusIcon.style.display = 'inline';
     } else {
-        statusText.innerHTML = 'Estado de tu caja: <strong>Vacía</strong>';
+        if (statusText) {
+            statusText.innerHTML = 'Estado de tu caja: <strong>Vacía</strong>';
+        }
         statusBar.classList.remove('btn-enviar-activo');
         statusBar.classList.add('btn-enviar-inactivo');
         statusBar.style.cursor = 'default';
+        
+        // Remover listeners
+        statusBar.removeEventListener('click', enviarMiCaja);
         statusBar.onclick = null;
+        
         if (statusIcon) statusIcon.style.display = 'none';
     }
     
@@ -1507,7 +1533,19 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // Función para enviar mi caja (crear petición de envío)
-async function enviarMiCaja() {
+async function enviarMiCaja(event) {
+    // ⚡ CRÍTICO: Prevenir múltiples clics simultáneos
+    if (enviarMiCaja.enProceso) {
+        console.log('⚠️ Ya hay una petición de envío en proceso');
+        return;
+    }
+    
+    // Prevenir comportamiento por defecto si es un evento
+    if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+    }
+    
     if (!clienteActual) {
         alert('Error: No hay sesión activa');
         return;
@@ -1524,6 +1562,9 @@ async function enviarMiCaja() {
     if (!confirm('¿Enviar tu caja ahora?\n\nSe creará una petición de envío con ' + pendientes.length + ' artículo(s) pendiente(s).')) {
         return;
     }
+    
+    // Marcar como en proceso
+    enviarMiCaja.enProceso = true;
     
     try {
         showLoading();
@@ -1602,6 +1643,8 @@ async function enviarMiCaja() {
         alert('❌ Error al crear la petición de envío:\n\n' + (err.message || 'Error desconocido'));
     } finally {
         hideLoading();
+        // Desmarcar como en proceso
+        enviarMiCaja.enProceso = false;
     }
 }
 
@@ -1744,7 +1787,6 @@ function actualizarVistaPuntos() {
     // Habilitar/deshabilitar botón de ruleta según puntos disponibles
     var puntosDisponibles = puntosDisp;
     
-    console.log('Puntos disponibles:', puntosDisponibles, 'Tipo:', typeof puntosDisponibles);
     
     if (puntosDisponibles >= 3) {
         btnRuleta.disabled = false;
@@ -1787,7 +1829,6 @@ async function girarRuleta() {
     }
     
     var puntosDisponibles = parseInt(puntosCliente.puntos_disponibles) || 0;
-    console.log('Intentando girar ruleta. Puntos disponibles:', puntosDisponibles, 'Tipo:', typeof puntosDisponibles);
     
     if (puntosDisponibles < 3) {
         alert('❌ No tienes suficientes puntos.\n\nNecesitas 3 puntos para girar la ruleta.\n\nTienes: ' + puntosDisponibles + ' puntos');
@@ -1803,9 +1844,6 @@ async function girarRuleta() {
         
         // Generar un número aleatorio entre 0 y 100
         var numeroAleatorio = Math.random() * 100;
-        console.log('[RULETA] ========================================');
-        console.log('[RULETA] Número aleatorio generado:', numeroAleatorio.toFixed(2));
-        
         // Determinar qué premio corresponde a este número aleatorio
         var premios = PREMIOS_RULETA_CONFIG;
         var premiosAcumulados = [];
@@ -1827,21 +1865,11 @@ async function girarRuleta() {
             }
         }
         
-        console.log('[RULETA] PREMIO DETERMINADO:', premio);
-        console.log('[RULETA] ========================================');
-        
         // Restar puntos
         var puntosNuevos = puntosDisponibles - 3;
         var girosTotales = (puntosCliente.giros_totales || 0) + 1;
         
         // Actualizar puntos en Supabase
-        console.log('[RULETA] Actualizando puntos en Supabase:', {
-            numero: clienteActual.numero,
-            puntos_disponibles: puntosNuevos,
-            giros_totales: girosTotales
-        });
-        
-        // IMPORTANTE: Usar .select() después del update para obtener los datos actualizados
         var respUpdate = await supabase
             .from('puntos_clientes')
             .update({
@@ -1849,49 +1877,11 @@ async function girarRuleta() {
                 giros_totales: girosTotales
             })
             .eq('numero', clienteActual.numero)
-            .select(); // Añadir select() para obtener los datos actualizados
+            .select();
         
         if (respUpdate.error) {
             console.error('[RULETA] Error actualizando puntos:', respUpdate.error);
             throw new Error('Error actualizando puntos: ' + respUpdate.error.message);
-        }
-        
-        console.log('[RULETA] Puntos actualizados correctamente en Supabase');
-        console.log('[RULETA] Respuesta de Supabase (UPDATE):', respUpdate);
-        
-        // Verificar que los puntos se guardaron correctamente leyendo desde Supabase
-        // Esperar un poco para asegurar que la actualización se haya propagado
-        await new Promise(resolve => setTimeout(resolve, 500));
-        
-        var respVerificar = await supabase
-            .from('puntos_clientes')
-            .select('puntos_disponibles, giros_totales')
-            .eq('numero', clienteActual.numero)
-            .maybeSingle();
-        
-        if (respVerificar.error) {
-            console.error('[RULETA] Error verificando puntos:', respVerificar.error);
-        } else if (respVerificar.data) {
-            var puntosVerificados = respVerificar.data.puntos_disponibles;
-            console.log('[RULETA] Puntos verificados en Supabase:', puntosVerificados);
-            if (puntosVerificados !== puntosNuevos) {
-                console.warn('[RULETA] ADVERTENCIA: Los puntos en Supabase no coinciden! Esperado:', puntosNuevos, 'Encontrado:', puntosVerificados);
-                // Intentar actualizar de nuevo si no coinciden
-                console.log('[RULETA] Reintentando actualización...');
-                var respRetry = await supabase
-                    .from('puntos_clientes')
-                    .update({
-                        puntos_disponibles: puntosNuevos,
-                        giros_totales: girosTotales
-                    })
-                    .eq('numero', clienteActual.numero)
-                    .select();
-                console.log('[RULETA] Respuesta del reintento:', respRetry);
-            } else {
-                console.log('[RULETA] OK: Los puntos se guardaron correctamente en Supabase');
-            }
-        } else {
-            console.warn('[RULETA] No se encontraron datos del cliente en puntos_clientes');
         }
         
         // Registrar tirada en Supabase
@@ -1912,25 +1902,11 @@ async function girarRuleta() {
                 hora: hora,
                 premio: premio,
                 gano_premio: premio !== 'NADA'
-            })
-            .select(); // Añadir select() para obtener los datos insertados
+            });
         
         if (respTirada.error) {
             console.error('[RULETA] Error registrando tirada:', respTirada.error);
-            console.error('[RULETA] Detalles del error:', JSON.stringify(respTirada.error, null, 2));
-        } else {
-            console.log('[RULETA] Tirada registrada correctamente:', respTirada.data);
-            if (respTirada.data && respTirada.data.length > 0) {
-                console.log('[RULETA] ID de la tirada:', respTirada.data[0].id);
-            }
         }
-        
-        // Verificar que la actualización fue exitosa
-        console.log('[RULETA] Puntos actualizados en Supabase:', {
-            antes: puntosDisponibles,
-            despues: puntosNuevos,
-            giros_totales: girosTotales
-        });
         
         // Actualizar puntos locales DESPUÉS de que se haya guardado en Supabase
         puntosCliente.puntos_disponibles = puntosNuevos;
@@ -1946,7 +1922,6 @@ async function girarRuleta() {
         setTimeout(function() {
             cargarHistorialRuleta();
             // Verificar que los puntos se mantengan actualizados (sin recargar desde Supabase)
-            console.log('[RULETA] Verificando puntos después del giro:', puntosCliente.puntos_disponibles);
         }, 500);
         
         // NO recargar puntos desde Supabase aquí - esperar a que el usuario cierre el resultado
@@ -2141,13 +2116,6 @@ function calcularAnguloPremio(premioGanado) {
             // El sector ahora estará en: (90 + 270) mod 360 = 0° ✓
             var anguloRotacion = anguloMedio === 0 ? 180 : (180 + anguloMedio);
             
-            console.log('[RULETA] ========================================');
-            console.log('[RULETA] Premio encontrado:', premioGanado);
-            console.log('[RULETA] Sector visual:', anguloAcumulado.toFixed(1) + '°-' + (anguloAcumulado + anguloSector).toFixed(1) + '°');
-            console.log('[RULETA] Centro del sector:', anguloMedio.toFixed(1) + '°');
-            console.log('[RULETA] Rotación calculada (180 + anguloMedio):', anguloRotacion.toFixed(1) + '°');
-            console.log('[RULETA] Verificación: Sector ' + anguloMedio.toFixed(1) + '° + rotación ' + anguloRotacion.toFixed(1) + '° = ' + ((anguloMedio + anguloRotacion) % 360).toFixed(1) + '° (debe ser 0°)');
-            console.log('[RULETA] ========================================');
             
             return anguloRotacion;
         }
@@ -2199,7 +2167,6 @@ function mostrarAnimacionRuleta(premio) {
     
     // Calcular rotación final exacta según el premio
     var anguloPremio = calcularAnguloPremio(premio);
-    console.log('[RULETA] Premio ganado:', premio, 'Ángulo calculado:', anguloPremio);
     
     var vueltasCompletas = 8 + Math.random() * 4; // Entre 8 y 12 vueltas para más emoción
     // Asegurar que el ángulo final sea positivo y correcto
@@ -2209,8 +2176,6 @@ function mostrarAnimacionRuleta(premio) {
     // Duración de la animación: 11 segundos (más emocionante)
     var duracionAnimacion = 11000; // 11 segundos en milisegundos
     
-    console.log('[RULETA] Vueltas:', vueltasCompletas.toFixed(2), 'Ángulo final:', anguloFinal.toFixed(2));
-    console.log('[RULETA] Duración de animación:', (duracionAnimacion / 1000) + ' segundos');
     
     // Iniciar animación de giro
     setTimeout(function() {
