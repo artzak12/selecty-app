@@ -588,53 +588,8 @@ function mostrarDatosCliente() {
     document.getElementById('stat-total-compras').textContent = ventasCliente.length;
     if (ventasCliente.length > 0) document.getElementById('stat-ultima-compra').textContent = formatDate(ventasCliente[0].fecha);
     
-    // Actualizar botón de envío
-    var statusBar = document.getElementById('status-envio');
-    if (!statusBar) {
-        console.error('Error: No se encontró el elemento status-envio');
-        return;
-    }
-    
-    var statusText = statusBar.querySelector('.status-text');
-    var statusIcon = statusBar.querySelector('.status-icon');
-    
-    // ⚡ CRÍTICO: Remover cualquier listener anterior para evitar duplicados
-    var nuevoStatusBar = statusBar.cloneNode(true);
-    statusBar.parentNode.replaceChild(nuevoStatusBar, statusBar);
-    statusBar = nuevoStatusBar;
-    
-    if (pendientes.length > 0) {
-        // Mostrar solo texto sin emoji duplicado (el icono ya está en el HTML)
-        if (statusText) {
-            statusText.innerHTML = 'Envía mi caja (' + pendientes.length + ' artículo' + (pendientes.length > 1 ? 's' : '') + ')';
-        }
-        statusBar.classList.add('btn-enviar-activo');
-        statusBar.classList.remove('btn-enviar-inactivo');
-        statusBar.style.cursor = 'pointer';
-        
-        // ⚡ CRÍTICO: Usar addEventListener en lugar de onclick para mayor compatibilidad
-        // Remover listener anterior si existe
-        statusBar.removeEventListener('click', enviarMiCaja);
-        statusBar.addEventListener('click', enviarMiCaja, { once: false });
-        
-        // También mantener onclick como fallback
-        statusBar.onclick = enviarMiCaja;
-        
-        if (statusIcon) statusIcon.style.display = 'inline';
-    } else {
-        if (statusText) {
-            statusText.innerHTML = 'Estado de tu caja: <strong>Vacía</strong>';
-        }
-        statusBar.classList.remove('btn-enviar-activo');
-        statusBar.classList.add('btn-enviar-inactivo');
-        statusBar.style.cursor = 'default';
-        
-        // Remover listeners
-        statusBar.removeEventListener('click', enviarMiCaja);
-        statusBar.onclick = null;
-        
-        if (statusIcon) statusIcon.style.display = 'none';
-    }
+    // Actualizar botón de envío (se actualizará después de verificar petición de envío)
+    actualizarBotonEnvio(pendientes);
     
     renderizarListas();
     cargarBonosCliente();
@@ -649,6 +604,84 @@ function mostrarDatosCliente() {
         actualizarVistaPuntos();
     }
     cargarHistorialRuleta(); // 🎯 NUEVO: Cargar historial de ruleta
+}
+
+// Función para actualizar el botón de envío según el estado
+async function actualizarBotonEnvio(pendientes) {
+    if (!clienteActual) return;
+    
+    var statusBar = document.getElementById('status-envio');
+    if (!statusBar) {
+        console.error('Error: No se encontró el elemento status-envio');
+        return;
+    }
+    
+    var statusText = statusBar.querySelector('.status-text');
+    var statusIcon = statusBar.querySelector('.status-icon');
+    
+    // ⚡ CRÍTICO: Remover cualquier listener anterior para evitar duplicados
+    var nuevoStatusBar = statusBar.cloneNode(true);
+    statusBar.parentNode.replaceChild(nuevoStatusBar, statusBar);
+    statusBar = nuevoStatusBar;
+    
+    // Verificar si hay una petición de envío existente
+    var tienePeticionEnvio = false;
+    try {
+        var respCheck = await supabase
+            .from('peticiones_envio')
+            .select('numero')
+            .eq('numero', clienteActual.numero)
+            .maybeSingle();
+        
+        tienePeticionEnvio = !!respCheck.data;
+    } catch (err) {
+        console.error('Error verificando petición de envío:', err);
+    }
+    
+    // Limpiar todas las clases
+    statusBar.classList.remove('btn-enviar-activo', 'btn-enviar-inactivo', 'btn-enviar-enviado');
+    
+    if (pendientes.length > 0) {
+        // Hay productos pendientes -> Botón AMARILLO (activo)
+        if (statusText) {
+            statusText.innerHTML = 'Envía mi caja (' + pendientes.length + ' artículo' + (pendientes.length > 1 ? 's' : '') + ')';
+        }
+        statusBar.classList.add('btn-enviar-activo');
+        statusBar.style.cursor = 'pointer';
+        
+        // Agregar listener para enviar
+        statusBar.removeEventListener('click', enviarMiCaja);
+        statusBar.addEventListener('click', enviarMiCaja, { once: false });
+        statusBar.onclick = enviarMiCaja;
+        
+        if (statusIcon) statusIcon.style.display = 'inline';
+    } else if (tienePeticionEnvio) {
+        // No hay pendientes pero hay petición de envío -> Botón VERDE (enviado)
+        if (statusText) {
+            statusText.innerHTML = '✅ Caja enviada - Esperando envío';
+        }
+        statusBar.classList.add('btn-enviar-enviado');
+        statusBar.style.cursor = 'default';
+        
+        // Remover listeners (no se puede hacer clic)
+        statusBar.removeEventListener('click', enviarMiCaja);
+        statusBar.onclick = null;
+        
+        if (statusIcon) statusIcon.style.display = 'inline';
+    } else {
+        // No hay pendientes ni petición -> Botón INACTIVO (gris)
+        if (statusText) {
+            statusText.innerHTML = 'Estado de tu caja: <strong>Vacía</strong>';
+        }
+        statusBar.classList.add('btn-enviar-inactivo');
+        statusBar.style.cursor = 'default';
+        
+        // Remover listeners
+        statusBar.removeEventListener('click', enviarMiCaja);
+        statusBar.onclick = null;
+        
+        if (statusIcon) statusIcon.style.display = 'none';
+    }
 }
 
 function renderizarListas() {
@@ -1627,16 +1660,9 @@ async function enviarMiCaja(event) {
             alert('✅ Petición de envío creada.\n\nTu caja aparecerá en la lista de envíos.');
         }
         
-        // Actualizar estado visual (feedback visual temporal)
-        var statusBar = document.getElementById('status-envio');
-        if (statusBar) {
-            statusBar.style.background = 'var(--success)';
-            setTimeout(function() {
-                statusBar.style.background = '';
-                // Recargar datos para actualizar el estado
-                recargarDatosCliente();
-            }, 2000);
-        }
+        // Actualizar estado visual - mostrar verde permanente
+        // Recargar datos para actualizar el estado del botón
+        await recargarDatosCliente();
         
     } catch (err) {
         console.error('Error enviando caja:', err);
