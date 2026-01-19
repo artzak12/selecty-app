@@ -661,11 +661,20 @@ async function actualizarBotonEnvio(pendientes) {
             statusText.innerHTML = '✅ Caja enviada - Esperando envío';
         }
         statusBar.classList.add('btn-enviar-enviado');
-        statusBar.style.cursor = 'default';
+        statusBar.style.cursor = 'not-allowed';
+        statusBar.style.pointerEvents = 'none'; // ⚡ CRÍTICO: Deshabilitar completamente los clics
         
         // Remover listeners (no se puede hacer clic)
         statusBar.removeEventListener('click', enviarMiCaja);
         statusBar.onclick = null;
+        
+        // Agregar listener que previene cualquier acción
+        statusBar.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+            return false;
+        }, true); // Usar capture phase para interceptar antes
         
         if (statusIcon) statusIcon.style.display = 'inline';
     } else {
@@ -1582,6 +1591,23 @@ async function enviarMiCaja(event) {
     if (!clienteActual) {
         alert('Error: No hay sesión activa');
         return;
+    }
+    
+    // ⚡ CRÍTICO: Verificar si ya hay una petición de envío activa
+    try {
+        var respCheck = await supabase
+            .from('peticiones_envio')
+            .select('numero')
+            .eq('numero', clienteActual.numero)
+            .maybeSingle();
+        
+        if (respCheck.data) {
+            console.log('⚠️ Ya existe una petición de envío activa');
+            alert('✅ Ya tienes una petición de envío activa. Tu caja está en proceso de envío.');
+            return;
+        }
+    } catch (err) {
+        console.error('Error verificando petición de envío:', err);
     }
     
     // Verificar que haya artículos pendientes
