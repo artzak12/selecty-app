@@ -232,10 +232,13 @@ main { padding: 20px; max-width: 600px; margin: 0 auto; }
     background: var(--success); 
     border-top: none; 
     box-shadow: 0 -4px 20px rgba(0, 210, 106, 0.3);
+    pointer-events: none; /* ⚡ CRÍTICO: Deshabilitar completamente los clics */
+    opacity: 0.9;
 }
 .status-bar.btn-enviar-enviado:hover { 
     background: var(--success); 
     box-shadow: 0 -4px 25px rgba(0, 210, 106, 0.4);
+    cursor: not-allowed !important;
 }
 .status-icon { 
     font-size: 22px; 
