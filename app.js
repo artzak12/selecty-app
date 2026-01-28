@@ -1593,23 +1593,6 @@ async function enviarMiCaja(event) {
         return;
     }
     
-    // ⚡ CRÍTICO: Verificar si ya hay una petición de envío activa
-    try {
-        var respCheck = await supabase
-            .from('peticiones_envio')
-            .select('numero')
-            .eq('numero', clienteActual.numero)
-            .maybeSingle();
-        
-        if (respCheck.data) {
-            console.log('⚠️ Ya existe una petición de envío activa');
-            alert('✅ Ya tienes una petición de envío activa. Tu caja está en proceso de envío.');
-            return;
-        }
-    } catch (err) {
-        console.error('Error verificando petición de envío:', err);
-    }
-    
     // Verificar que haya artículos pendientes
     var pendientes = ventasCliente.filter(function(v) { return !v.seguimiento; });
     if (pendientes.length === 0) {
@@ -1634,21 +1617,28 @@ async function enviarMiCaja(event) {
                    (ahora.getMonth() + 1).toString().padStart(2, '0') + '-' + 
                    ahora.getDate().toString().padStart(2, '0');
         var hora = ahora.getHours().toString().padStart(2, '0') + ':' + 
-                  ahora.getMinutes().toString().padStart(2, '0');
+                  ahora.getMinutes().toString().padStart(2, '0') + ':' +
+                  ahora.getSeconds().toString().padStart(2, '0');
         var fecha_peticion = fecha + ' ' + hora;
         
         var numero = clienteActual.numero;
         var nombre = clienteActual.nombre || 'Cliente #' + numero;
         
-        // Verificar si ya existe una petición para este número
+        // ⚡ CORRECCIÓN: Verificar primero si existe, luego insertar o actualizar
+        // Esto evita errores de duplicado en la clave primaria
         var respCheck = await supabase
             .from('peticiones_envio')
             .select('numero')
             .eq('numero', numero)
             .maybeSingle();
         
+        if (respCheck.error && respCheck.error.code !== 'PGRST116') {
+            console.error('Error verificando petición existente:', respCheck.error);
+            // Continuar e intentar insertar de todas formas
+        }
+        
         if (respCheck.data) {
-            // Actualizar petición existente
+            // Ya existe una petición, actualizar
             var respUpdate = await supabase
                 .from('peticiones_envio')
                 .update({
@@ -1663,7 +1653,7 @@ async function enviarMiCaja(event) {
             
             alert('✅ Petición de envío actualizada.\n\nTu caja aparecerá en la lista de envíos.');
         } else {
-            // Crear nueva petición
+            // No existe, crear nueva petición
             var respInsert = await supabase
                 .from('peticiones_envio')
                 .insert({
@@ -1673,17 +1663,31 @@ async function enviarMiCaja(event) {
                 });
             
             if (respInsert.error) {
-                // Si la tabla no existe, mostrar error descriptivo
-                if (respInsert.error.code === 'PGRST116' || respInsert.error.message.includes('does not exist')) {
+                // Si hay error de duplicado, intentar actualizar (puede haber condición de carrera)
+                if (respInsert.error.message && respInsert.error.message.includes('duplicate key')) {
+                    console.log('⚠️ Error de duplicado detectado al insertar, intentando actualizar...');
+                    var respUpdateRetry = await supabase
+                        .from('peticiones_envio')
+                        .update({
+                            nombre: nombre,
+                            fecha_peticion: fecha_peticion
+                        })
+                        .eq('numero', numero);
+                    
+                    if (respUpdateRetry.error) {
+                        throw new Error('Error actualizando petición después de duplicado: ' + (respUpdateRetry.error.message || 'Error desconocido'));
+                    }
+                    alert('✅ Petición de envío actualizada.\n\nTu caja aparecerá en la lista de envíos.');
+                } else if (respInsert.error.code === 'PGRST116' || respInsert.error.message.includes('does not exist')) {
                     alert('❌ Error: La tabla "peticiones_envio" no existe en Supabase.\n\nContacta con el administrador.');
+                    hideLoading();
+                    return;
                 } else {
                     throw new Error('Error creando petición: ' + (respInsert.error.message || 'Error desconocido'));
                 }
-                hideLoading();
-                return;
+            } else {
+                alert('✅ Petición de envío creada.\n\nTu caja aparecerá en la lista de envíos.');
             }
-            
-            alert('✅ Petición de envío creada.\n\nTu caja aparecerá en la lista de envíos.');
         }
         
         // Actualizar estado visual - mostrar verde permanente
