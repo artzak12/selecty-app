@@ -283,10 +283,26 @@ main { padding: 20px; max-width: 600px; margin: 0 auto; }
     color: var(--primary); 
 }
 
-/* Texto específico del estado de caja ("Pendiente") en la barra inferior */
+/* Texto específico del estado de caja ("Pendiente") en la barra inferior - SIEMPRE en rojo */
 #estado-caja {
-    color: var(--danger) !important;
-    font-weight: 700;
+    color: #FF3B30 !important;
+    font-weight: 700 !important;
+}
+.status-bar .status-text #estado-caja {
+    color: #FF3B30 !important;
+    font-weight: 700 !important;
+}
+.status-bar.btn-enviar-activo .status-text #estado-caja {
+    color: #FF3B30 !important;
+    font-weight: 700 !important;
+}
+.status-bar.btn-enviar-inactivo .status-text #estado-caja {
+    color: #FF3B30 !important;
+    font-weight: 700 !important;
+}
+.status-bar.btn-enviar-enviado .status-text #estado-caja {
+    color: #FF3B30 !important;
+    font-weight: 700 !important;
 }
 
 .loading-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.9); display: none; align-items: center; justify-content: center; flex-direction: column; gap: 20px; z-index: 9999; }
