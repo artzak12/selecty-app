@@ -263,7 +263,8 @@ main { padding: 20px; max-width: 600px; margin: 0 auto; }
     opacity: 0.8; 
 }
 .status-bar.btn-enviar-inactivo .status-text strong { 
-    color: var(--text-primary) !important; 
+    /* PENDIENTE en rojo para que destaque bien */
+    color: var(--danger) !important; 
     font-weight: 700 !important; 
     opacity: 1 !important; 
     font-size: 15px; 
