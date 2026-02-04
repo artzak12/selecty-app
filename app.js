@@ -619,10 +619,13 @@ async function actualizarBotonEnvio(pendientes) {
     var statusText = statusBar.querySelector('.status-text');
     var statusIcon = statusBar.querySelector('.status-icon');
     
-    // ⚡ CRÍTICO: Remover cualquier listener anterior para evitar duplicados
+    // ⚡ CRÍTICO: Remover cualquier listener anterior para evitar duplicados.
+    // Clonamos el nodo, lo sustituimos y VOLVEMOS a capturar los elementos hijos.
     var nuevoStatusBar = statusBar.cloneNode(true);
     statusBar.parentNode.replaceChild(nuevoStatusBar, statusBar);
     statusBar = nuevoStatusBar;
+    statusText = statusBar.querySelector('.status-text');
+    statusIcon = statusBar.querySelector('.status-icon');
     
     // Verificar si hay una petición de envío existente
     var tienePeticionEnvio = false;
