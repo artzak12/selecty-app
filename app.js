@@ -641,11 +641,12 @@ async function actualizarBotonEnvio(pendientes) {
     // Limpiar todas las clases
     statusBar.classList.remove('btn-enviar-activo', 'btn-enviar-inactivo', 'btn-enviar-enviado');
     
-    // ⚡ PRIORIDAD: Si ya hay petición de envío, mostrar mensaje de confirmación (aunque haya pendientes)
+    // ⚡ PRIORIDAD: Si ya hay petición de envío, mostrar SIEMPRE que está en proceso,
+    // aunque aún queden artículos pendientes en la caja.
     if (tienePeticionEnvio) {
-        // No hay pendientes pero hay petición de envío -> Botón VERDE (enviado)
+        // Estado: petición registrada -> Botón VERDE (en proceso)
         if (statusText) {
-            statusText.innerHTML = '✅ Ya has solicitado el envío de tu caja';
+            statusText.innerHTML = 'En proceso de envío';
         }
         statusBar.classList.add('btn-enviar-enviado');
         statusBar.style.cursor = 'not-allowed';
@@ -666,8 +667,9 @@ async function actualizarBotonEnvio(pendientes) {
         if (statusIcon) statusIcon.style.display = 'inline';
     } else if (pendientes.length > 0) {
         // Hay productos pendientes pero NO hay petición -> Botón AMARILLO (activo)
+        // Texto claro para el cliente
         if (statusText) {
-            statusText.innerHTML = 'Envía mi caja (' + pendientes.length + ' artículo' + (pendientes.length > 1 ? 's' : '') + ')';
+            statusText.innerHTML = 'Solicitar envío de mi caja';
         }
         statusBar.classList.add('btn-enviar-activo');
         statusBar.style.cursor = 'pointer';
@@ -1609,7 +1611,7 @@ async function enviarMiCaja(event) {
     }
     
     if (tienePeticionEnvio) {
-        alert('✅ Ya has solicitado el envío de tu caja.\n\nTu solicitud está registrada y aparecerá en nuestra lista de envíos.\n\nTe notificaremos cuando tu caja esté en camino.');
+        alert('✅ Tu caja ya está en proceso de envío.\n\nTu solicitud está registrada y aparecerá en nuestra lista de envíos.');
         // Recargar datos para actualizar el estado visual
         await recargarDatosCliente();
         return;
@@ -1673,7 +1675,7 @@ async function enviarMiCaja(event) {
                 throw new Error('Error actualizando petición: ' + (respUpdate.error.message || 'Error desconocido'));
             }
             
-            alert('✅ Ya has solicitado el envío de tu caja.\n\nTu solicitud ha sido registrada y aparecerá en nuestra lista de envíos.\n\nTe notificaremos cuando tu caja esté en camino.');
+            alert('✅ En proceso de envío.\n\nTu solicitud ha sido registrada y aparecerá en nuestra lista de envíos.');
         } else {
             // No existe, crear nueva petición
             var respInsert = await supabase
@@ -1699,7 +1701,7 @@ async function enviarMiCaja(event) {
                     if (respUpdateRetry.error) {
                         throw new Error('Error actualizando petición después de duplicado: ' + (respUpdateRetry.error.message || 'Error desconocido'));
                     }
-                    alert('✅ Ya has solicitado el envío de tu caja.\n\nTu solicitud ha sido registrada y aparecerá en nuestra lista de envíos.\n\nTe notificaremos cuando tu caja esté en camino.');
+                    alert('✅ En proceso de envío.\n\nTu solicitud ha sido registrada y aparecerá en nuestra lista de envíos.');
                 } else if (respInsert.error.code === 'PGRST116' || respInsert.error.message.includes('does not exist')) {
                     alert('❌ Error: La tabla "peticiones_envio" no existe en Supabase.\n\nContacta con el administrador.');
                     hideLoading();
@@ -1708,7 +1710,7 @@ async function enviarMiCaja(event) {
                     throw new Error('Error creando petición: ' + (respInsert.error.message || 'Error desconocido'));
                 }
             } else {
-            alert('✅ Ya has solicitado el envío de tu caja.\n\nTu solicitud ha sido registrada y aparecerá en nuestra lista de envíos.\n\nTe notificaremos cuando tu caja esté en camino.');
+            alert('✅ En proceso de envío.\n\nTu solicitud ha sido registrada y aparecerá en nuestra lista de envíos.');
             }
         }
         
