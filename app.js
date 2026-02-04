@@ -641,24 +641,11 @@ async function actualizarBotonEnvio(pendientes) {
     // Limpiar todas las clases
     statusBar.classList.remove('btn-enviar-activo', 'btn-enviar-inactivo', 'btn-enviar-enviado');
     
-    if (pendientes.length > 0) {
-        // Hay productos pendientes -> Botón AMARILLO (activo)
-        if (statusText) {
-            statusText.innerHTML = 'Envía mi caja (' + pendientes.length + ' artículo' + (pendientes.length > 1 ? 's' : '') + ')';
-        }
-        statusBar.classList.add('btn-enviar-activo');
-        statusBar.style.cursor = 'pointer';
-        
-        // Agregar listener para enviar
-        statusBar.removeEventListener('click', enviarMiCaja);
-        statusBar.addEventListener('click', enviarMiCaja, { once: false });
-        statusBar.onclick = enviarMiCaja;
-        
-        if (statusIcon) statusIcon.style.display = 'inline';
-    } else if (tienePeticionEnvio) {
+    // ⚡ PRIORIDAD: Si ya hay petición de envío, mostrar mensaje de confirmación (aunque haya pendientes)
+    if (tienePeticionEnvio) {
         // No hay pendientes pero hay petición de envío -> Botón VERDE (enviado)
         if (statusText) {
-            statusText.innerHTML = '✅ Caja enviada - Esperando envío';
+            statusText.innerHTML = '✅ Ya has solicitado el envío de tu caja';
         }
         statusBar.classList.add('btn-enviar-enviado');
         statusBar.style.cursor = 'not-allowed';
@@ -675,6 +662,20 @@ async function actualizarBotonEnvio(pendientes) {
             e.stopImmediatePropagation();
             return false;
         }, true); // Usar capture phase para interceptar antes
+        
+        if (statusIcon) statusIcon.style.display = 'inline';
+    } else if (pendientes.length > 0) {
+        // Hay productos pendientes pero NO hay petición -> Botón AMARILLO (activo)
+        if (statusText) {
+            statusText.innerHTML = 'Envía mi caja (' + pendientes.length + ' artículo' + (pendientes.length > 1 ? 's' : '') + ')';
+        }
+        statusBar.classList.add('btn-enviar-activo');
+        statusBar.style.cursor = 'pointer';
+        
+        // Agregar listener para enviar
+        statusBar.removeEventListener('click', enviarMiCaja);
+        statusBar.addEventListener('click', enviarMiCaja, { once: false });
+        statusBar.onclick = enviarMiCaja;
         
         if (statusIcon) statusIcon.style.display = 'inline';
     } else {
@@ -1593,6 +1594,27 @@ async function enviarMiCaja(event) {
         return;
     }
     
+    // Verificar si ya existe una petición de envío
+    var tienePeticionEnvio = false;
+    try {
+        var respCheck = await supabase
+            .from('peticiones_envio')
+            .select('numero')
+            .eq('numero', clienteActual.numero)
+            .maybeSingle();
+        
+        tienePeticionEnvio = !!respCheck.data;
+    } catch (err) {
+        console.error('Error verificando petición de envío:', err);
+    }
+    
+    if (tienePeticionEnvio) {
+        alert('✅ Ya has solicitado el envío de tu caja.\n\nTu solicitud está registrada y aparecerá en nuestra lista de envíos.\n\nTe notificaremos cuando tu caja esté en camino.');
+        // Recargar datos para actualizar el estado visual
+        await recargarDatosCliente();
+        return;
+    }
+    
     // Verificar que haya artículos pendientes
     var pendientes = ventasCliente.filter(function(v) { return !v.seguimiento; });
     if (pendientes.length === 0) {
@@ -1601,7 +1623,7 @@ async function enviarMiCaja(event) {
     }
     
     // Confirmar acción
-    if (!confirm('¿Enviar tu caja ahora?\n\nSe creará una petición de envío con ' + pendientes.length + ' artículo(s) pendiente(s).')) {
+    if (!confirm('¿Solicitar el envío de tu caja ahora?\n\nSe creará una petición de envío con ' + pendientes.length + ' artículo(s) pendiente(s).\n\n¿Confirmas?')) {
         return;
     }
     
@@ -1651,7 +1673,7 @@ async function enviarMiCaja(event) {
                 throw new Error('Error actualizando petición: ' + (respUpdate.error.message || 'Error desconocido'));
             }
             
-            alert('✅ Petición de envío actualizada.\n\nTu caja aparecerá en la lista de envíos.');
+            alert('✅ Ya has solicitado el envío de tu caja.\n\nTu solicitud ha sido registrada y aparecerá en nuestra lista de envíos.\n\nTe notificaremos cuando tu caja esté en camino.');
         } else {
             // No existe, crear nueva petición
             var respInsert = await supabase
@@ -1677,7 +1699,7 @@ async function enviarMiCaja(event) {
                     if (respUpdateRetry.error) {
                         throw new Error('Error actualizando petición después de duplicado: ' + (respUpdateRetry.error.message || 'Error desconocido'));
                     }
-                    alert('✅ Petición de envío actualizada.\n\nTu caja aparecerá en la lista de envíos.');
+                    alert('✅ Ya has solicitado el envío de tu caja.\n\nTu solicitud ha sido registrada y aparecerá en nuestra lista de envíos.\n\nTe notificaremos cuando tu caja esté en camino.');
                 } else if (respInsert.error.code === 'PGRST116' || respInsert.error.message.includes('does not exist')) {
                     alert('❌ Error: La tabla "peticiones_envio" no existe en Supabase.\n\nContacta con el administrador.');
                     hideLoading();
@@ -1686,7 +1708,7 @@ async function enviarMiCaja(event) {
                     throw new Error('Error creando petición: ' + (respInsert.error.message || 'Error desconocido'));
                 }
             } else {
-                alert('✅ Petición de envío creada.\n\nTu caja aparecerá en la lista de envíos.');
+            alert('✅ Ya has solicitado el envío de tu caja.\n\nTu solicitud ha sido registrada y aparecerá en nuestra lista de envíos.\n\nTe notificaremos cuando tu caja esté en camino.');
             }
         }
         
