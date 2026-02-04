@@ -262,6 +262,10 @@ main { padding: 20px; max-width: 600px; margin: 0 auto; }
     color: var(--text-secondary); 
     font-weight: 600; 
 }
+.status-bar.btn-enviar-inactivo .status-text strong { 
+    color: var(--text-primary); 
+    font-weight: 700; 
+}
 .status-bar.btn-enviar-enviado .status-text { 
     color: #000; 
     font-weight: 700; 
