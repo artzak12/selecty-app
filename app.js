@@ -2019,18 +2019,15 @@ async function girarRuleta() {
 
 // Definición global de premios (para sincronizar entre ruleta visual y generación aleatoria)
 var PREMIOS_RULETA_CONFIG = [
-    { nombre: 'NADA', porcentaje: 50.0, color: '#666666', color2: '#444444', emoji: '😔' },
-    { nombre: 'Regalo COBRE', porcentaje: 3.0, color: '#CD7F32', color2: '#8B4513', emoji: '🥉' },
-    { nombre: 'Regalo PLATA', porcentaje: 2.5, color: '#C0C0C0', color2: '#808080', emoji: '🥈' },
-    { nombre: 'Regalo ORO', porcentaje: 1.5, color: '#FFD700', color2: '#FFA500', emoji: '🥇' },
-    { nombre: '10€ BONO', porcentaje: 1.7, color: '#4CAF50', color2: '#2E7D32', emoji: '💶' },
-    { nombre: '20€ BONO', porcentaje: 1.0, color: '#2196F3', color2: '#1565C0', emoji: '💶' },
-    { nombre: '30€ BONO', porcentaje: 0.3, color: '#9C27B0', color2: '#6A1B9A', emoji: '💶' },
-    { nombre: '50€ BONO', porcentaje: 0.2, color: '#F44336', color2: '#C62828', emoji: '💶' },
-    { nombre: 'Tortuguita', porcentaje: 9.95, color: '#8BC34A', color2: '#689F38', emoji: '🐢' },
-    { nombre: 'Chuche', porcentaje: 9.95, color: '#FF9800', color2: '#F57C00', emoji: '🍬' },
-    { nombre: 'Panda', porcentaje: 9.95, color: '#000000', color2: '#FFFFFF', emoji: '🐼' },
-    { nombre: 'Cacharrito', porcentaje: 9.95, color: '#607D8B', color2: '#37474F', emoji: '🎮' }
+    { nombre: 'NADA', porcentaje: 65.0, color: '#666666', color2: '#444444', emoji: '😔' },
+    { nombre: '10€ BONO', porcentaje: 1.79, color: '#4CAF50', color2: '#2E7D32', emoji: '💶' },
+    { nombre: '20€ BONO', porcentaje: 1.05, color: '#2196F3', color2: '#1565C0', emoji: '💶' },
+    { nombre: '30€ BONO', porcentaje: 0.32, color: '#9C27B0', color2: '#6A1B9A', emoji: '💶' },
+    { nombre: '50€ BONO', porcentaje: 0.21, color: '#F44336', color2: '#C62828', emoji: '💶' },
+    { nombre: 'Tortuguita', porcentaje: 10.49, color: '#8BC34A', color2: '#689F38', emoji: '🐢' },
+    { nombre: 'Chuche', porcentaje: 10.49, color: '#FF9800', color2: '#F57C00', emoji: '🍬' },
+    { nombre: 'Panda', porcentaje: 10.49, color: '#000000', color2: '#FFFFFF', emoji: '🐼' },
+    { nombre: 'Cacharrito', porcentaje: 10.16, color: '#607D8B', color2: '#37474F', emoji: '🎮' }
 ];
 
 // Crear ruleta visual con todos los premios
