@@ -1272,7 +1272,8 @@ async function crearCajaNueva() {
                     .eq('numero', parseInt(numero));
                 
                 if (respUpdate.error) {
-                    throw new Error('Error actualizando caja: ' + respUpdate.error.message);
+                    var errorMsgEsp = traducirErrorSupabase(respUpdate.error.message);
+                    throw new Error('Error actualizando caja: ' + errorMsgEsp);
                 }
                 
                 // Login automático
@@ -1294,7 +1295,8 @@ async function crearCajaNueva() {
             });
         
         if (respCreate.error) {
-            throw new Error('Error creando caja: ' + respCreate.error.message);
+            var errorMsgEsp = traducirErrorSupabase(respCreate.error.message);
+            throw new Error('Error creando caja: ' + errorMsgEsp);
         }
         
         // Login automático
@@ -1303,9 +1305,55 @@ async function crearCajaNueva() {
         
     } catch (err) {
         console.error('Error creando caja:', err);
-        errorMsg.textContent = '❌ Error: ' + (err.message || 'No se pudo crear la caja');
+        var mensajeError = err.message || 'No se pudo crear la caja';
+        // Traducir mensajes de error comunes
+        mensajeError = traducirErrorSupabase(mensajeError);
+        errorMsg.textContent = '❌ Error: ' + mensajeError;
         hideLoading();
     }
+}
+
+// Función para traducir errores de Supabase al español
+function traducirErrorSupabase(mensaje) {
+    if (!mensaje) return 'Error desconocido';
+    
+    var mensajeLower = mensaje.toLowerCase();
+    
+    // Errores de columnas no encontradas
+    if (mensajeLower.indexOf('could not find') >= 0 && mensajeLower.indexOf('column') >= 0) {
+        if (mensajeLower.indexOf('tel') >= 0) {
+            return 'La columna de teléfono no existe en la base de datos. Contacta con soporte.';
+        }
+        return 'Error en la base de datos: columna no encontrada. Contacta con soporte.';
+    }
+    
+    // Errores de esquema
+    if (mensajeLower.indexOf('schema') >= 0 && mensajeLower.indexOf('cache') >= 0) {
+        return 'Error en la estructura de la base de datos. Contacta con soporte.';
+    }
+    
+    // Errores de validación
+    if (mensajeLower.indexOf('violates') >= 0 || mensajeLower.indexOf('constraint') >= 0) {
+        return 'Datos inválidos. Verifica que el número de caja y teléfono sean correctos.';
+    }
+    
+    // Errores de duplicado
+    if (mensajeLower.indexOf('duplicate') >= 0 || mensajeLower.indexOf('unique') >= 0) {
+        return 'Esta caja ya existe. Si es tuya, usa "Entrar" arriba.';
+    }
+    
+    // Errores de conexión
+    if (mensajeLower.indexOf('network') >= 0 || mensajeLower.indexOf('fetch') >= 0 || mensajeLower.indexOf('connection') >= 0) {
+        return 'Error de conexión. Verifica tu internet e intenta de nuevo.';
+    }
+    
+    // Errores de permisos
+    if (mensajeLower.indexOf('permission') >= 0 || mensajeLower.indexOf('unauthorized') >= 0) {
+        return 'No tienes permisos para realizar esta acción. Contacta con soporte.';
+    }
+    
+    // Si no coincide con ningún patrón conocido, devolver el mensaje original
+    return mensaje;
 }
 
 async function loginConCredenciales(numero, password) {
