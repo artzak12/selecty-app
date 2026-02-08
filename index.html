@@ -315,7 +315,7 @@
                 
                 <div class="benef-filtros">
                     <div class="filtro-group">
-                        <label>Período:</label>
+                        <label>📅 Período</label>
                         <select id="benef-periodo">
                             <option value="hoy">Hoy</option>
                             <option value="ayer">Ayer</option>
@@ -326,14 +326,17 @@
                         </select>
                     </div>
                     <div class="filtro-group">
-                        <label>Turno:</label>
+                        <label>⏰ Turno</label>
                         <select id="benef-turno">
                             <option value="todos">Todos</option>
                             <option value="manana">Mañana (10-18h)</option>
                             <option value="tarde">Tarde (18-6h)</option>
                         </select>
                     </div>
-                    <button id="btn-calcular-benef" class="btn-primary" onclick="calcularBeneficios()">📊 Calcular</button>
+                    <div class="filtro-group" style="min-width: auto;">
+                        <label style="opacity: 0;">⠀</label>
+                        <button id="btn-calcular-benef" class="btn-primary" onclick="calcularBeneficios()" style="width: 100%; padding: 12px 20px; font-size: 15px; font-weight: 700;">📊 Calcular</button>
+                    </div>
                 </div>
 
                 <div id="benef-estadisticas-generales" class="benef-section">
