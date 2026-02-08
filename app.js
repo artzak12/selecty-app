@@ -1263,13 +1263,28 @@ async function crearCajaNueva() {
                 return;
             } else {
                 // La caja existe pero no tiene contraseña, actualizarla
+                // Usar 'telefono' (no 'tel') que es el nombre correcto en Supabase
+                var datosUpdate = {
+                    password: password,
+                    telefono: telefono
+                };
+                
                 var respUpdate = await supabase
                     .from('clientes')
-                    .update({ 
-                        password: password,
-                        tel: telefono
-                    })
+                    .update(datosUpdate)
                     .eq('numero', parseInt(numero));
+                
+                // Si falla por la columna telefono, intentar solo con password
+                if (respUpdate.error && respUpdate.error.message && 
+                    (respUpdate.error.message.toLowerCase().indexOf('telefono') >= 0 || 
+                     respUpdate.error.message.toLowerCase().indexOf('tel') >= 0)) {
+                    // Actualizar solo la contraseña si la columna de teléfono no existe
+                    datosUpdate = { password: password };
+                    respUpdate = await supabase
+                        .from('clientes')
+                        .update(datosUpdate)
+                        .eq('numero', parseInt(numero));
+                }
                 
                 if (respUpdate.error) {
                     var errorMsgEsp = traducirErrorSupabase(respUpdate.error.message);
@@ -1284,15 +1299,29 @@ async function crearCajaNueva() {
         }
         
         // Crear nueva caja
+        // Usar 'telefono' (no 'tel') que es el nombre correcto en Supabase
+        var datosInsert = {
+            numero: parseInt(numero),
+            password: password,
+            telefono: telefono,
+            nombre: '',
+            bono_total: 0
+        };
+        
         var respCreate = await supabase
             .from('clientes')
-            .insert({
-                numero: parseInt(numero),
-                password: password,
-                tel: telefono,
-                nombre: '',
-                bono_total: 0
-            });
+            .insert(datosInsert);
+        
+        // Si falla por la columna telefono, intentar sin teléfono
+        if (respCreate.error && respCreate.error.message && 
+            (respCreate.error.message.toLowerCase().indexOf('telefono') >= 0 || 
+             respCreate.error.message.toLowerCase().indexOf('tel') >= 0)) {
+            // Crear sin teléfono si la columna no existe
+            delete datosInsert.telefono;
+            respCreate = await supabase
+                .from('clientes')
+                .insert(datosInsert);
+        }
         
         if (respCreate.error) {
             var errorMsgEsp = traducirErrorSupabase(respCreate.error.message);
