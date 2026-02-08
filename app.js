@@ -1248,7 +1248,7 @@ async function crearCajaNueva() {
     showLoading();
     
     try {
-        // Verificar si la caja ya existe (incluyendo teléfono para preservarlo)
+        // Verificar si la caja ya existe (incluyendo teléfono para preservarlo y verificar)
         var respCheck = await supabase
             .from('clientes')
             .select('numero, password, telefono')
@@ -1267,6 +1267,25 @@ async function crearCajaNueva() {
                 return;
             } else {
                 // La caja existe pero no tiene contraseña, actualizarla
+                // VERIFICAR que los últimos 4 dígitos coincidan con el teléfono completo
+                var telefonoCompleto = respCheck.data.telefono || '';
+                
+                if (!telefonoCompleto || telefonoCompleto.length < 4) {
+                    errorMsg.textContent = '⚠️ No se encontró teléfono completo para esta caja. Contacta con soporte.';
+                    hideLoading();
+                    return;
+                }
+                
+                // Normalizar teléfono (quitar espacios, guiones, etc.)
+                var telefonoNormalizado = telefonoCompleto.replace(/\D/g, '');
+                var ultimos4Reales = telefonoNormalizado.slice(-4);
+                
+                if (telefono !== ultimos4Reales) {
+                    errorMsg.textContent = '⚠️ Los últimos 4 dígitos no coinciden con el teléfono registrado. Verifica e intenta de nuevo.';
+                    hideLoading();
+                    return;
+                }
+                
                 // IMPORTANTE: No sobrescribir el teléfono completo con solo 4 dígitos
                 // Solo actualizar la contraseña, preservar el teléfono original si existe
                 var datosUpdate = {
@@ -1303,18 +1322,64 @@ async function crearCajaNueva() {
         }
         
         // Crear nueva caja
+        // IMPORTANTE: Para crear una caja nueva, debe existir en el Gestor con teléfono completo
+        // Verificar que existe el cliente con teléfono completo para validar los últimos 4 dígitos
+        var respCheckCliente = await supabase
+            .from('clientes')
+            .select('numero, telefono, password, nombre, bono_total')
+            .eq('numero', parseInt(numero))
+            .maybeSingle();
+        
+        if (respCheckCliente.error && respCheckCliente.error.code !== 'PGRST116') {
+            throw new Error('Error verificando cliente: ' + respCheckCliente.error.message);
+        }
+        
+        // Si el cliente no existe en absoluto, no se puede crear sin teléfono completo
+        if (!respCheckCliente.data) {
+            errorMsg.textContent = '⚠️ Esta caja no existe en el sistema. Contacta con soporte para crear tu caja.';
+            hideLoading();
+            return;
+        }
+        
+        // Si el cliente existe pero ya tiene contraseña, no se puede crear de nuevo
+        if (respCheckCliente.data.password) {
+            errorMsg.textContent = '⚠️ Esta caja ya tiene contraseña. Si es tuya, usa "Entrar" arriba.';
+            hideLoading();
+            return;
+        }
+        
+        // Si el cliente existe pero no tiene teléfono completo, no se puede verificar
+        var telefonoCompleto = respCheckCliente.data.telefono || '';
+        if (!telefonoCompleto || telefonoCompleto.length < 4) {
+            errorMsg.textContent = '⚠️ No se encontró teléfono completo para esta caja. Contacta con soporte.';
+            hideLoading();
+            return;
+        }
+        
+        // VERIFICAR que los últimos 4 dígitos coincidan con el teléfono completo
+        var telefonoNormalizado = telefonoCompleto.replace(/\D/g, '');
+        var ultimos4Reales = telefonoNormalizado.slice(-4);
+        
+        if (telefono !== ultimos4Reales) {
+            errorMsg.textContent = '⚠️ Los últimos 4 dígitos no coinciden con el teléfono registrado. Verifica e intenta de nuevo.';
+            hideLoading();
+            return;
+        }
+        
+        // Crear/actualizar la caja con la contraseña
         // NOTA: No guardamos el teléfono completo (solo 4 dígitos), solo la contraseña
-        // El teléfono completo debe estar en el Gestor
+        // El teléfono completo ya está en el Gestor
         var datosInsert = {
             numero: parseInt(numero),
             password: password,
-            nombre: '',
-            bono_total: 0
+            nombre: respCheckCliente.data.nombre || '',
+            bono_total: respCheckCliente.data.bono_total || 0
         };
         
         var respCreate = await supabase
             .from('clientes')
-            .insert(datosInsert);
+            .update(datosInsert)
+            .eq('numero', parseInt(numero));
         
         if (respCreate.error) {
             var errorMsgEsp = traducirErrorSupabase(respCreate.error.message);
