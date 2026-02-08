@@ -1244,10 +1244,10 @@ async function crearCajaNueva() {
     showLoading();
     
     try {
-        // Verificar si la caja ya existe
+        // Verificar si la caja ya existe (incluyendo teléfono para preservarlo)
         var respCheck = await supabase
             .from('clientes')
-            .select('numero, password')
+            .select('numero, password, telefono')
             .eq('numero', parseInt(numero))
             .maybeSingle();
         
@@ -1263,11 +1263,27 @@ async function crearCajaNueva() {
                 return;
             } else {
                 // La caja existe pero no tiene contraseña, actualizarla
+                // IMPORTANTE: Si el teléfono ingresado tiene menos de 9 dígitos, 
+                // probablemente solo son los últimos 4 dígitos. No sobrescribir el teléfono completo.
+                var telefonoParaGuardar = telefono;
+                var telefonoOriginal = respCheck.data.telefono || '';
+                
+                // Si el teléfono ingresado es muy corto (menos de 9 dígitos) y ya existe un teléfono completo,
+                // mantener el teléfono original y solo actualizar la contraseña
+                if (telefono.length < 9 && telefonoOriginal && telefonoOriginal.length >= 9) {
+                    telefonoParaGuardar = telefonoOriginal;
+                    console.log('⚠️ Teléfono ingresado muy corto, manteniendo teléfono original:', telefonoOriginal);
+                }
+                
                 // Usar 'telefono' (no 'tel') que es el nombre correcto en Supabase
                 var datosUpdate = {
-                    password: password,
-                    telefono: telefono
+                    password: password
                 };
+                
+                // Solo actualizar teléfono si el ingresado es válido (9+ dígitos) o no existe teléfono original
+                if (telefono.length >= 9 || !telefonoOriginal) {
+                    datosUpdate.telefono = telefonoParaGuardar;
+                }
                 
                 var respUpdate = await supabase
                     .from('clientes')
@@ -1291,9 +1307,10 @@ async function crearCajaNueva() {
                     throw new Error('Error actualizando caja: ' + errorMsgEsp);
                 }
                 
-                // Login automático
-                await loginConCredenciales(numero, password);
-                cerrarModalCajaNueva();
+                // Mostrar mensaje de éxito con la contraseña antes de hacer login
+                // Usar el teléfono original para mostrar en el mensaje si existe
+                var telefonoParaMostrar = telefonoOriginal && telefonoOriginal.length >= 9 ? telefonoOriginal : telefono;
+                mostrarConfirmacionPassword(numero, password, telefonoParaMostrar);
                 return;
             }
         }
@@ -1328,9 +1345,8 @@ async function crearCajaNueva() {
             throw new Error('Error creando caja: ' + errorMsgEsp);
         }
         
-        // Login automático
-        await loginConCredenciales(numero, password);
-        cerrarModalCajaNueva();
+        // Mostrar mensaje de éxito con la contraseña antes de hacer login
+        mostrarConfirmacionPassword(numero, password, telefono);
         
     } catch (err) {
         console.error('Error creando caja:', err);
@@ -1390,6 +1406,52 @@ async function loginConCredenciales(numero, password) {
     inputNumero.value = numero;
     inputPassword.value = password;
     await login();
+}
+
+// Función para mostrar confirmación de contraseña antes de iniciar sesión
+// Variables globales para el modal de confirmación
+var passwordConfirmNumero = null;
+var passwordConfirmPassword = null;
+
+function mostrarConfirmacionPassword(numero, password, telefono) {
+    cerrarModalCajaNueva();
+    
+    // Guardar valores para usar después
+    passwordConfirmNumero = numero;
+    passwordConfirmPassword = password;
+    
+    // Actualizar valores en el modal
+    var passwordValue = document.getElementById('password-confirm-value');
+    var passwordTelefono = document.getElementById('password-confirm-telefono');
+    var modalConfirmacion = document.getElementById('modal-confirmacion-password');
+    
+    if (passwordValue) {
+        passwordValue.textContent = password;
+    }
+    if (passwordTelefono) {
+        passwordTelefono.textContent = '(Últimos 4 dígitos de tu teléfono: ' + telefono + ')';
+    }
+    
+    // Mostrar modal
+    if (modalConfirmacion) {
+        modalConfirmacion.classList.add('active');
+    }
+}
+
+function cerrarConfirmacionPassword() {
+    var modal = document.getElementById('modal-confirmacion-password');
+    if (modal) {
+        modal.classList.remove('active');
+    }
+    passwordConfirmNumero = null;
+    passwordConfirmPassword = null;
+}
+
+async function continuarConLoginDesdeModal() {
+    if (passwordConfirmNumero && passwordConfirmPassword) {
+        cerrarConfirmacionPassword();
+        await loginConCredenciales(passwordConfirmNumero, passwordConfirmPassword);
+    }
 }
 
 function mostrarPopupCrearPassword() {
