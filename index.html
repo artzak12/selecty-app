@@ -314,29 +314,26 @@
                 <h2>💰 Análisis de Beneficios</h2>
                 
                 <div class="benef-filtros">
-                    <div class="filtro-group">
-                        <label>📅 Período</label>
-                        <select id="benef-periodo">
-                            <option value="hoy">Hoy</option>
-                            <option value="ayer">Ayer</option>
-                            <option value="antes-ayer">Antes de ayer</option>
-                            <option value="hace-3">Hace 3 días</option>
-                            <option value="semana">Esta semana</option>
-                            <option value="mes">Este mes</option>
-                        </select>
+                    <div class="filtro-section">
+                        <label class="filtro-section-label">📅 Período</label>
+                        <div class="filtro-buttons">
+                            <button class="filtro-btn" data-periodo="hoy" onclick="seleccionarPeriodo('hoy')">Hoy</button>
+                            <button class="filtro-btn" data-periodo="ayer" onclick="seleccionarPeriodo('ayer')">Ayer</button>
+                            <button class="filtro-btn" data-periodo="antes-ayer" onclick="seleccionarPeriodo('antes-ayer')">Antes de ayer</button>
+                            <button class="filtro-btn" data-periodo="hace-3" onclick="seleccionarPeriodo('hace-3')">Hace 3 días</button>
+                            <button class="filtro-btn" data-periodo="semana" onclick="seleccionarPeriodo('semana')">Esta semana</button>
+                            <button class="filtro-btn" data-periodo="mes" onclick="seleccionarPeriodo('mes')">Este mes</button>
+                        </div>
                     </div>
-                    <div class="filtro-group">
-                        <label>⏰ Turno</label>
-                        <select id="benef-turno">
-                            <option value="todos">Todos</option>
-                            <option value="manana">Mañana (10-18h)</option>
-                            <option value="tarde">Tarde (18-6h)</option>
-                        </select>
+                    <div class="filtro-section">
+                        <label class="filtro-section-label">⏰ Turno</label>
+                        <div class="filtro-buttons">
+                            <button class="filtro-btn" data-turno="todos" onclick="seleccionarTurno('todos')">Todos</button>
+                            <button class="filtro-btn" data-turno="manana" onclick="seleccionarTurno('manana')">Mañana</button>
+                            <button class="filtro-btn" data-turno="tarde" onclick="seleccionarTurno('tarde')">Tarde</button>
+                        </div>
                     </div>
-                    <div class="filtro-group" style="min-width: auto;">
-                        <label style="opacity: 0;">⠀</label>
-                        <button id="btn-calcular-benef" class="btn-primary" onclick="calcularBeneficios()" style="width: 100%; padding: 12px 20px; font-size: 15px; font-weight: 700;">📊 Calcular</button>
-                    </div>
+                    <button id="btn-calcular-benef" class="btn-primary btn-calcular-benef" onclick="calcularBeneficios()">📊 Calcular</button>
                 </div>
 
                 <div id="benef-estadisticas-generales" class="benef-section">
