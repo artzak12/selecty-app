@@ -517,12 +517,283 @@ main { padding: 20px; max-width: 600px; margin: 0 auto; }
 .venta-delete { background: var(--danger); color: #fff; border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer; font-size: 12px; }
 .venta-delete:hover { opacity: 0.8; }
 
+/* Estilos para pestaña Benef */
+.benef-filtros {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    background: var(--bg-card);
+    padding: 16px;
+    border-radius: 16px;
+    border: 1px solid #333;
+}
+.filtro-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex: 1;
+    min-width: 140px;
+}
+.filtro-group label {
+    font-size: 13px;
+    color: var(--text-secondary);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+.filtro-group select {
+    padding: 12px 16px;
+    font-size: 14px;
+    border: 2px solid #333;
+    border-radius: 12px;
+    background: var(--bg-dark);
+    color: var(--text-primary);
+    font-family: inherit;
+    transition: all 0.2s;
+}
+.filtro-group select:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.1);
+}
+.benef-section {
+    margin-bottom: 32px;
+}
+.benef-section h3 {
+    font-size: 20px;
+    margin-bottom: 20px;
+    color: var(--primary);
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.benef-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+}
+.benef-stat-card {
+    background: var(--bg-card);
+    border-radius: 16px;
+    padding: 20px;
+    text-align: center;
+    border: 2px solid #333;
+    transition: all 0.3s;
+    position: relative;
+    overflow: hidden;
+}
+.benef-stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--primary), #FFA500);
+}
+.benef-stat-card:hover {
+    border-color: var(--primary);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(255, 215, 0, 0.15);
+}
+.benef-stat-label {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-bottom: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+}
+.benef-stat-value {
+    font-size: 24px;
+    font-weight: 800;
+    color: var(--primary);
+    text-shadow: 0 2px 8px rgba(255, 215, 0, 0.3);
+}
+.benef-articulos-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+}
+.benef-articulo-card {
+    background: var(--bg-card);
+    border-radius: 16px;
+    padding: 20px;
+    border: 2px solid #333;
+    transition: all 0.3s;
+    position: relative;
+}
+.benef-articulo-card:hover {
+    border-color: var(--primary);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(255, 215, 0, 0.15);
+}
+.benef-articulo-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: linear-gradient(180deg, var(--primary), #FFA500);
+    border-radius: 16px 0 0 16px;
+}
+.benef-articulo-nombre {
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--primary);
+    margin-bottom: 16px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+.benef-articulo-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    font-size: 14px;
+}
+.benef-articulo-stats > div {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    background: rgba(255, 215, 0, 0.05);
+    border-radius: 8px;
+    border: 1px solid rgba(255, 215, 0, 0.1);
+}
+.benef-articulo-stats span {
+    color: var(--primary);
+    font-weight: 700;
+    font-size: 15px;
+}
+.benef-beneficios-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+}
+.benef-beneficio-card {
+    background: var(--bg-card);
+    border-radius: 16px;
+    padding: 20px;
+    border: 2px solid #333;
+    transition: all 0.3s;
+    position: relative;
+    overflow: hidden;
+}
+.benef-beneficio-card:hover {
+    border-color: var(--primary);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(255, 215, 0, 0.15);
+}
+.benef-beneficio-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: linear-gradient(180deg, var(--success), #00B85A);
+    border-radius: 16px 0 0 16px;
+}
+.benef-beneficio-nombre {
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--primary);
+    margin-bottom: 16px;
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid rgba(255, 215, 0, 0.2);
+}
+.benef-beneficio-detalle {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    font-size: 13px;
+}
+.benef-beneficio-detalle > div {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    background: rgba(255, 215, 0, 0.05);
+    border-radius: 8px;
+    border: 1px solid rgba(255, 215, 0, 0.1);
+}
+.benef-beneficio-detalle span {
+    color: var(--text-primary);
+    font-weight: 700;
+    font-size: 14px;
+}
+.benef-beneficio-total {
+    margin-top: 12px;
+    padding: 12px;
+    background: linear-gradient(135deg, rgba(0, 210, 106, 0.15), rgba(0, 210, 106, 0.05));
+    border: 2px solid var(--success);
+    border-radius: 12px;
+    font-size: 15px;
+    font-weight: 800;
+    color: var(--success);
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+.benef-beneficio-total span {
+    color: var(--success);
+    font-size: 18px;
+    display: block;
+    margin-top: 4px;
+}
+.benef-total-card {
+    background: linear-gradient(135deg, rgba(255, 215, 0, 0.2), rgba(255, 165, 0, 0.1));
+    border: 3px solid var(--primary);
+    border-radius: 20px;
+    padding: 32px 24px;
+    text-align: center;
+    box-shadow: 0 10px 40px rgba(255, 215, 0, 0.3);
+    position: relative;
+    overflow: hidden;
+}
+.benef-total-card::before {
+    content: '💰';
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    font-size: 48px;
+    opacity: 0.2;
+}
+.benef-total-label {
+    font-size: 20px;
+    font-weight: 800;
+    color: var(--primary);
+    margin-bottom: 16px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    text-shadow: 0 2px 8px rgba(255, 215, 0, 0.5);
+}
+.benef-total-value {
+    font-size: 42px;
+    font-weight: 900;
+    color: var(--primary);
+    text-shadow: 0 4px 12px rgba(255, 215, 0, 0.6);
+    letter-spacing: -1px;
+}
+
 @media (max-width: 500px) {
     .admin-stats-grid { grid-template-columns: 1fr; }
     .turnos-grid { grid-template-columns: 1fr; }
     .filtros-ventas { flex-direction: column; }
     .cliente-form .form-row { flex-direction: column; align-items: stretch; }
     .cliente-form label { width: auto; margin-bottom: 4px; }
+    .benef-stats-grid { grid-template-columns: 1fr; }
+    .benef-articulos-grid { grid-template-columns: 1fr; }
+    .benef-beneficios-grid { grid-template-columns: 1fr; }
+    .benef-filtros { flex-direction: column; }
 }
 
 /* Estilos para seguimiento de envíos */
