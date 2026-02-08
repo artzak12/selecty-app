@@ -1457,8 +1457,13 @@ function filtrarPorTurno(ventas, turno) {
 
 // Función principal para calcular beneficios
 function calcularBeneficios() {
-    var periodo = document.getElementById('benef-periodo').value;
-    var turno = document.getElementById('benef-turno').value;
+    // Obtener período seleccionado
+    var periodoBtn = document.querySelector('.filtro-btn[data-periodo].active');
+    var periodo = periodoBtn ? periodoBtn.getAttribute('data-periodo') : 'hoy';
+    
+    // Obtener turno seleccionado
+    var turnoBtn = document.querySelector('.filtro-btn[data-turno].active');
+    var turno = turnoBtn ? turnoBtn.getAttribute('data-turno') : 'todos';
     
     // Filtrar ventas por período (considerando turnos y horas)
     var ventasFiltradas = filtrarVentasPorPeriodo(todasLasVentas, periodo);
@@ -1801,16 +1806,12 @@ document.addEventListener('DOMContentLoaded', function() {
     if (btnCalcularBenef) {
         btnCalcularBenef.addEventListener('click', calcularBeneficios);
     }
-    if (adminBuscarCliente) {
-        adminBuscarCliente.addEventListener('keypress', function(e) { 
-            if (e.key === 'Enter') buscarCliente(); 
-        });
-    }
     
-    var btnGuardarCliente = document.getElementById('btn-guardar-cliente');
-    if (btnGuardarCliente) {
-        btnGuardarCliente.addEventListener('click', guardarCambiosCliente);
-    }
+    // Inicializar selección de filtros
+    setTimeout(function() {
+        seleccionarPeriodo('hoy');
+        seleccionarTurno('todos');
+    }, 100);
     
     var btnFiltrarVentas = document.getElementById('btn-filtrar-ventas');
     if (btnFiltrarVentas) {
@@ -1822,6 +1823,31 @@ document.addEventListener('DOMContentLoaded', function() {
         filtroFecha.addEventListener('change', mostrarListaVentas);
     }
 });
+
+// Funciones para seleccionar período y turno
+function seleccionarPeriodo(periodo) {
+    // Remover activo de todos los botones de período
+    document.querySelectorAll('.filtro-btn[data-periodo]').forEach(function(btn) {
+        btn.classList.remove('active');
+    });
+    // Activar el botón seleccionado
+    var btn = document.querySelector('.filtro-btn[data-periodo="' + periodo + '"]');
+    if (btn) {
+        btn.classList.add('active');
+    }
+}
+
+function seleccionarTurno(turno) {
+    // Remover activo de todos los botones de turno
+    document.querySelectorAll('.filtro-btn[data-turno]').forEach(function(btn) {
+        btn.classList.remove('active');
+    });
+    // Activar el botón seleccionado
+    var btn = document.querySelector('.filtro-btn[data-turno="' + turno + '"]');
+    if (btn) {
+        btn.classList.add('active');
+    }
+}
 
 // Función para enviar mi caja (crear petición de envío)
 async function enviarMiCaja(event) {
