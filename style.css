@@ -97,6 +97,160 @@ body {
 .footer-text { margin-top: 32px; font-size: 14px; color: var(--text-secondary); }
 .footer-text a { color: var(--primary); text-decoration: none; font-weight: 600; }
 
+/* Botón Caja Nueva */
+.divider-login {
+    display: flex;
+    align-items: center;
+    margin: 24px 0;
+    text-align: center;
+}
+.divider-login::before,
+.divider-login::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: #333;
+}
+.divider-login span {
+    padding: 0 16px;
+    color: var(--text-muted);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.btn-caja-nueva {
+    width: 100%;
+    padding: 18px 24px;
+    font-size: 15px;
+    font-weight: 600;
+    border: 2px solid var(--primary);
+    border-radius: 12px;
+    background: linear-gradient(135deg, rgba(255, 215, 0, 0.1), rgba(255, 165, 0, 0.05));
+    color: var(--primary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    transition: all 0.3s;
+    font-family: inherit;
+    margin-top: 8px;
+    position: relative;
+    overflow: hidden;
+}
+.btn-caja-nueva::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 215, 0, 0.2), transparent);
+    transition: left 0.5s;
+}
+.btn-caja-nueva:hover::before {
+    left: 100%;
+}
+.btn-caja-nueva:hover {
+    background: linear-gradient(135deg, rgba(255, 215, 0, 0.2), rgba(255, 165, 0, 0.1));
+    border-color: var(--primary);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(255, 215, 0, 0.3);
+}
+.btn-caja-nueva:active {
+    transform: translateY(0);
+}
+.btn-caja-nueva-icon {
+    font-size: 28px;
+    animation: sparkle 2s ease-in-out infinite;
+}
+@keyframes sparkle {
+    0%, 100% { transform: scale(1) rotate(0deg); }
+    50% { transform: scale(1.1) rotate(5deg); }
+}
+.btn-caja-nueva-text {
+    flex: 1;
+    text-align: left;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+.btn-caja-nueva-text strong {
+    font-size: 16px;
+    font-weight: 800;
+    color: var(--primary);
+}
+.btn-caja-nueva-text small {
+    font-size: 12px;
+    color: var(--text-secondary);
+    font-weight: 400;
+}
+.btn-caja-nueva svg {
+    width: 20px;
+    height: 20px;
+    color: var(--primary);
+}
+
+/* Modal Caja Nueva */
+.caja-nueva-box {
+    max-width: 450px;
+    animation: slideUp 0.3s ease-out;
+}
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+.input-hint {
+    display: block;
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 6px;
+    font-style: italic;
+}
+.password-preview {
+    padding: 14px 16px;
+    font-size: 24px;
+    font-weight: 800;
+    letter-spacing: 8px;
+    text-align: center;
+    background: linear-gradient(135deg, rgba(255, 215, 0, 0.15), rgba(255, 165, 0, 0.1));
+    border: 2px solid var(--primary);
+    border-radius: 12px;
+    color: var(--primary);
+    font-family: 'Courier New', monospace;
+}
+.popup-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 24px;
+}
+.btn-secondary {
+    width: 100%;
+    padding: 14px 24px;
+    font-size: 15px;
+    font-weight: 600;
+    border: 2px solid #333;
+    border-radius: 12px;
+    background: var(--bg-dark);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: inherit;
+}
+.btn-secondary:hover {
+    border-color: var(--text-secondary);
+    color: var(--text-primary);
+    background: var(--bg-card);
+}
+
 #main-screen { padding-bottom: 70px; }
 
 header { background: var(--bg-card); padding: 16px 20px; border-bottom: 1px solid #333; position: sticky; top: 0; z-index: 100; }
@@ -314,6 +468,8 @@ main { padding: 20px; max-width: 600px; margin: 0 auto; }
 /* POPUP */
 .popup-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.95); display: none; align-items: center; justify-content: center; padding: 20px; z-index: 10000; }
 .popup-overlay.active { display: flex; }
+#modal-caja-nueva { display: none; }
+#modal-caja-nueva.active { display: flex; }
 .popup-box { background: var(--bg-card); border-radius: var(--border-radius); padding: 32px 24px; max-width: 400px; width: 100%; border: 2px solid var(--primary); box-shadow: 0 0 40px rgba(255, 215, 0, 0.2); }
 .popup-header { text-align: center; margin-bottom: 16px; }
 .popup-icon { font-size: 48px; display: block; margin-bottom: 12px; }
