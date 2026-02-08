@@ -249,6 +249,7 @@
             <!-- Tabs Admin -->
             <div class="admin-tabs">
                 <button class="admin-tab active" data-admin-tab="dashboard">📊 Dashboard</button>
+                <button class="admin-tab" data-admin-tab="benef">💰 Benef</button>
                 <button class="admin-tab" data-admin-tab="clientes">👥 Clientes</button>
                 <button class="admin-tab" data-admin-tab="ventas">📋 Ventas</button>
                 <button id="btn-recargar-admin" class="btn-recargar" onclick="recargarDatosAdmin()">🔄 Recargar</button>
@@ -306,8 +307,190 @@
                     </div>
                 </div>
 
-                <h3>🏆 Top 5 Clientes</h3>
-                <div id="top-clientes" class="top-clientes-list"></div>
+            </div>
+
+            <!-- Benef -->
+            <div id="admin-benef" class="admin-panel">
+                <h2>💰 Análisis de Beneficios</h2>
+                
+                <div class="benef-filtros">
+                    <div class="filtro-group">
+                        <label>Período:</label>
+                        <select id="benef-periodo">
+                            <option value="hoy">Hoy</option>
+                            <option value="ayer">Ayer</option>
+                            <option value="antes-ayer">Antes de ayer</option>
+                            <option value="hace-3">Hace 3 días</option>
+                            <option value="semana">Esta semana</option>
+                            <option value="mes">Este mes</option>
+                        </select>
+                    </div>
+                    <div class="filtro-group">
+                        <label>Turno:</label>
+                        <select id="benef-turno">
+                            <option value="todos">Todos</option>
+                            <option value="manana">Mañana (10-18h)</option>
+                            <option value="tarde">Tarde (18-6h)</option>
+                        </select>
+                    </div>
+                    <button id="btn-calcular-benef" class="btn-primary" onclick="calcularBeneficios()">📊 Calcular</button>
+                </div>
+
+                <div id="benef-estadisticas-generales" class="benef-section">
+                    <h3>📈 Estadísticas Generales</h3>
+                    <div class="benef-stats-grid">
+                        <div class="benef-stat-card">
+                            <div class="benef-stat-label">Ventas</div>
+                            <div class="benef-stat-value" id="benef-ventas">0,00 €</div>
+                        </div>
+                        <div class="benef-stat-card">
+                            <div class="benef-stat-label">Media por venta</div>
+                            <div class="benef-stat-value" id="benef-media-venta">0,00 €</div>
+                        </div>
+                        <div class="benef-stat-card">
+                            <div class="benef-stat-label">Unidades vendidas</div>
+                            <div class="benef-stat-value" id="benef-unidades">0</div>
+                        </div>
+                        <div class="benef-stat-card">
+                            <div class="benef-stat-label">Clientes únicos</div>
+                            <div class="benef-stat-value" id="benef-clientes-unicos">0</div>
+                        </div>
+                        <div class="benef-stat-card">
+                            <div class="benef-stat-label">Venta máxima</div>
+                            <div class="benef-stat-value" id="benef-venta-max">0,00 €</div>
+                        </div>
+                        <div class="benef-stat-card">
+                            <div class="benef-stat-label">Venta mínima</div>
+                            <div class="benef-stat-value" id="benef-venta-min">0,00 €</div>
+                        </div>
+                        <div class="benef-stat-card">
+                            <div class="benef-stat-label">Tiempo</div>
+                            <div class="benef-stat-value" id="benef-tiempo">0h 0m</div>
+                        </div>
+                        <div class="benef-stat-card">
+                            <div class="benef-stat-label">Facturación/Hora</div>
+                            <div class="benef-stat-value" id="benef-facturacion-hora">0,00 €</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="benef-estadisticas-articulos" class="benef-section">
+                    <h3>📦 Por Artículo</h3>
+                    <div class="benef-articulos-grid">
+                        <div class="benef-articulo-card" id="benef-vintage">
+                            <div class="benef-articulo-nombre">Vintage</div>
+                            <div class="benef-articulo-stats">
+                                <div>Unidades: <span id="benef-vintage-unidades">0</span></div>
+                                <div>Importe: <span id="benef-vintage-importe">0,00 €</span></div>
+                                <div>Media: <span id="benef-vintage-media">0,00 €</span></div>
+                            </div>
+                        </div>
+                        <div class="benef-articulo-card" id="benef-paq-textil">
+                            <div class="benef-articulo-nombre">Paq. Textil</div>
+                            <div class="benef-articulo-stats">
+                                <div>Unidades: <span id="benef-paq-textil-unidades">0</span></div>
+                                <div>Importe: <span id="benef-paq-textil-importe">0,00 €</span></div>
+                                <div>Media: <span id="benef-paq-textil-media">0,00 €</span></div>
+                            </div>
+                        </div>
+                        <div class="benef-articulo-card" id="benef-otros">
+                            <div class="benef-articulo-nombre">Otros</div>
+                            <div class="benef-articulo-stats">
+                                <div>Unidades: <span id="benef-otros-unidades">0</span></div>
+                                <div>Importe: <span id="benef-otros-importe">0,00 €</span></div>
+                                <div>Media: <span id="benef-otros-media">0,00 €</span></div>
+                            </div>
+                        </div>
+                        <div class="benef-articulo-card" id="benef-tortuguitas">
+                            <div class="benef-articulo-nombre">Tortuguitas</div>
+                            <div class="benef-articulo-stats">
+                                <div>Unidades: <span id="benef-tortuguitas-unidades">0</span></div>
+                                <div>Importe: <span id="benef-tortuguitas-importe">0,00 €</span></div>
+                                <div>Media: <span id="benef-tortuguitas-media">0,00 €</span></div>
+                            </div>
+                        </div>
+                        <div class="benef-articulo-card" id="benef-pandas">
+                            <div class="benef-articulo-nombre">Pandas</div>
+                            <div class="benef-articulo-stats">
+                                <div>Unidades: <span id="benef-pandas-unidades">0</span></div>
+                                <div>Importe: <span id="benef-pandas-importe">0,00 €</span></div>
+                                <div>Media: <span id="benef-pandas-media">0,00 €</span></div>
+                            </div>
+                        </div>
+                        <div class="benef-articulo-card" id="benef-chuches">
+                            <div class="benef-articulo-nombre">Chuches</div>
+                            <div class="benef-articulo-stats">
+                                <div>Unidades: <span id="benef-chuches-unidades">0</span></div>
+                                <div>Importe: <span id="benef-chuches-importe">0,00 €</span></div>
+                                <div>Media: <span id="benef-chuches-media">0,00 €</span></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="benef-beneficios" class="benef-section">
+                    <h3>💵 Análisis de Beneficios</h3>
+                    <div class="benef-beneficios-grid">
+                        <div class="benef-beneficio-card" id="benef-beneficio-vintage">
+                            <div class="benef-beneficio-nombre">Vintage</div>
+                            <div class="benef-beneficio-detalle">
+                                <div>Unidades: <span id="benef-beneficio-vintage-unidades">0</span></div>
+                                <div>Ingresos: <span id="benef-beneficio-vintage-ingresos">0,00 €</span></div>
+                                <div>Coste (2,40€): <span id="benef-beneficio-vintage-coste">0,00 €</span></div>
+                                <div class="benef-beneficio-total">Beneficio: <span id="benef-beneficio-vintage-total">0,00 €</span></div>
+                            </div>
+                        </div>
+                        <div class="benef-beneficio-card" id="benef-beneficio-paq-textil">
+                            <div class="benef-beneficio-nombre">Paq. Textil</div>
+                            <div class="benef-beneficio-detalle">
+                                <div>Unidades: <span id="benef-beneficio-paq-textil-unidades">0</span></div>
+                                <div>Ingresos: <span id="benef-beneficio-paq-textil-ingresos">0,00 €</span></div>
+                                <div>Coste (1,60€): <span id="benef-beneficio-paq-textil-coste">0,00 €</span></div>
+                                <div class="benef-beneficio-total">Beneficio: <span id="benef-beneficio-paq-textil-total">0,00 €</span></div>
+                            </div>
+                        </div>
+                        <div class="benef-beneficio-card" id="benef-beneficio-otros">
+                            <div class="benef-beneficio-nombre">Otros</div>
+                            <div class="benef-beneficio-detalle">
+                                <div>Unidades: <span id="benef-beneficio-otros-unidades">0</span></div>
+                                <div>Ingresos: <span id="benef-beneficio-otros-ingresos">0,00 €</span></div>
+                                <div>Coste (1,00€): <span id="benef-beneficio-otros-coste">0,00 €</span></div>
+                                <div class="benef-beneficio-total">Beneficio: <span id="benef-beneficio-otros-total">0,00 €</span></div>
+                            </div>
+                        </div>
+                        <div class="benef-beneficio-card" id="benef-beneficio-tortuguitas">
+                            <div class="benef-beneficio-nombre">Tortuguitas</div>
+                            <div class="benef-beneficio-detalle">
+                                <div>Unidades: <span id="benef-beneficio-tortuguitas-unidades">0</span></div>
+                                <div>Ingresos: <span id="benef-beneficio-tortuguitas-ingresos">0,00 €</span></div>
+                                <div>Coste (1,60€): <span id="benef-beneficio-tortuguitas-coste">0,00 €</span></div>
+                                <div class="benef-beneficio-total">Beneficio: <span id="benef-beneficio-tortuguitas-total">0,00 €</span></div>
+                            </div>
+                        </div>
+                        <div class="benef-beneficio-card" id="benef-beneficio-pandas">
+                            <div class="benef-beneficio-nombre">Pandas</div>
+                            <div class="benef-beneficio-detalle">
+                                <div>Unidades: <span id="benef-beneficio-pandas-unidades">0</span></div>
+                                <div>Ingresos: <span id="benef-beneficio-pandas-ingresos">0,00 €</span></div>
+                                <div>Coste (1,60€): <span id="benef-beneficio-pandas-coste">0,00 €</span></div>
+                                <div class="benef-beneficio-total">Beneficio: <span id="benef-beneficio-pandas-total">0,00 €</span></div>
+                            </div>
+                        </div>
+                        <div class="benef-beneficio-card" id="benef-beneficio-chuches">
+                            <div class="benef-beneficio-nombre">Chuches</div>
+                            <div class="benef-beneficio-detalle">
+                                <div>Unidades: <span id="benef-beneficio-chuches-unidades">0</span></div>
+                                <div>Ingresos: <span id="benef-beneficio-chuches-ingresos">0,00 €</span></div>
+                                <div>Coste (1,10€): <span id="benef-beneficio-chuches-coste">0,00 €</span></div>
+                                <div class="benef-beneficio-total">Beneficio: <span id="benef-beneficio-chuches-total">0,00 €</span></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="benef-total-card">
+                        <div class="benef-total-label">💰 Beneficio Total</div>
+                        <div class="benef-total-value" id="benef-total-beneficio">0,00 €</div>
+                    </div>
+                </div>
             </div>
 
             <!-- Clientes -->
