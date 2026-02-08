@@ -1208,19 +1208,20 @@ function cerrarModalCajaNueva() {
         // Limpiar campos
         var inputNum = document.getElementById('nueva-caja-numero');
         var inputTel = document.getElementById('nueva-caja-telefono');
+        var inputPassword = document.getElementById('nueva-caja-password');
         var errorMsg = document.getElementById('nueva-caja-error');
-        var passwordGroup = document.getElementById('nueva-caja-password-group');
         
         if (inputNum) inputNum.value = '';
         if (inputTel) inputTel.value = '';
+        if (inputPassword) inputPassword.value = '';
         if (errorMsg) errorMsg.textContent = '';
-        if (passwordGroup) passwordGroup.style.display = 'none';
     }
 }
 
 async function crearCajaNueva() {
     var numero = document.getElementById('nueva-caja-numero').value.trim();
     var telefono = document.getElementById('nueva-caja-telefono').value.trim();
+    var password = document.getElementById('nueva-caja-password').value.trim();
     var errorMsg = document.getElementById('nueva-caja-error');
     
     errorMsg.textContent = '';
@@ -1232,14 +1233,17 @@ async function crearCajaNueva() {
         return;
     }
     
-    if (!telefono || telefono.length < 4) {
-        errorMsg.textContent = '⚠️ Introduce tu teléfono (mínimo 4 dígitos)';
+    if (!telefono || telefono.length !== 4) {
+        errorMsg.textContent = '⚠️ Introduce los últimos 4 dígitos de tu teléfono';
         document.getElementById('nueva-caja-telefono').focus();
         return;
     }
     
-    // Generar contraseña con últimos 4 dígitos
-    var password = telefono.slice(-4);
+    if (!password || password.length < 4) {
+        errorMsg.textContent = '⚠️ Elige una contraseña (mínimo 4 caracteres)';
+        document.getElementById('nueva-caja-password').focus();
+        return;
+    }
     
     showLoading();
     
@@ -1263,27 +1267,11 @@ async function crearCajaNueva() {
                 return;
             } else {
                 // La caja existe pero no tiene contraseña, actualizarla
-                // IMPORTANTE: Si el teléfono ingresado tiene menos de 9 dígitos, 
-                // probablemente solo son los últimos 4 dígitos. No sobrescribir el teléfono completo.
-                var telefonoParaGuardar = telefono;
-                var telefonoOriginal = respCheck.data.telefono || '';
-                
-                // Si el teléfono ingresado es muy corto (menos de 9 dígitos) y ya existe un teléfono completo,
-                // mantener el teléfono original y solo actualizar la contraseña
-                if (telefono.length < 9 && telefonoOriginal && telefonoOriginal.length >= 9) {
-                    telefonoParaGuardar = telefonoOriginal;
-                    console.log('⚠️ Teléfono ingresado muy corto, manteniendo teléfono original:', telefonoOriginal);
-                }
-                
-                // Usar 'telefono' (no 'tel') que es el nombre correcto en Supabase
+                // IMPORTANTE: No sobrescribir el teléfono completo con solo 4 dígitos
+                // Solo actualizar la contraseña, preservar el teléfono original si existe
                 var datosUpdate = {
                     password: password
                 };
-                
-                // Solo actualizar teléfono si el ingresado es válido (9+ dígitos) o no existe teléfono original
-                if (telefono.length >= 9 || !telefonoOriginal) {
-                    datosUpdate.telefono = telefonoParaGuardar;
-                }
                 
                 var respUpdate = await supabase
                     .from('clientes')
@@ -1307,20 +1295,19 @@ async function crearCajaNueva() {
                     throw new Error('Error actualizando caja: ' + errorMsgEsp);
                 }
                 
-                // Mostrar mensaje de éxito con la contraseña antes de hacer login
-                // Usar el teléfono original para mostrar en el mensaje si existe
-                var telefonoParaMostrar = telefonoOriginal && telefonoOriginal.length >= 9 ? telefonoOriginal : telefono;
-                mostrarConfirmacionPassword(numero, password, telefonoParaMostrar);
+                // Login automático después de crear/actualizar la caja
+                cerrarModalCajaNueva();
+                await loginConCredenciales(numero, password);
                 return;
             }
         }
         
         // Crear nueva caja
-        // Usar 'telefono' (no 'tel') que es el nombre correcto en Supabase
+        // NOTA: No guardamos el teléfono completo (solo 4 dígitos), solo la contraseña
+        // El teléfono completo debe estar en el Gestor
         var datosInsert = {
             numero: parseInt(numero),
             password: password,
-            telefono: telefono,
             nombre: '',
             bono_total: 0
         };
@@ -1329,24 +1316,14 @@ async function crearCajaNueva() {
             .from('clientes')
             .insert(datosInsert);
         
-        // Si falla por la columna telefono, intentar sin teléfono
-        if (respCreate.error && respCreate.error.message && 
-            (respCreate.error.message.toLowerCase().indexOf('telefono') >= 0 || 
-             respCreate.error.message.toLowerCase().indexOf('tel') >= 0)) {
-            // Crear sin teléfono si la columna no existe
-            delete datosInsert.telefono;
-            respCreate = await supabase
-                .from('clientes')
-                .insert(datosInsert);
-        }
-        
         if (respCreate.error) {
             var errorMsgEsp = traducirErrorSupabase(respCreate.error.message);
             throw new Error('Error creando caja: ' + errorMsgEsp);
         }
         
-        // Mostrar mensaje de éxito con la contraseña antes de hacer login
-        mostrarConfirmacionPassword(numero, password, telefono);
+        // Login automático después de crear la caja
+        cerrarModalCajaNueva();
+        await loginConCredenciales(numero, password);
         
     } catch (err) {
         console.error('Error creando caja:', err);
