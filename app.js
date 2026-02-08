@@ -1189,6 +1189,132 @@ async function checkAutoLogin() {
 
 let telefonoVerificado = false;
 
+// Funciones para modal de caja nueva
+function mostrarModalCajaNueva() {
+    var modal = document.getElementById('modal-caja-nueva');
+    if (modal) {
+        modal.classList.add('active');
+        setTimeout(function() {
+            var inputNum = document.getElementById('nueva-caja-numero');
+            if (inputNum) inputNum.focus();
+        }, 100);
+    }
+}
+
+function cerrarModalCajaNueva() {
+    var modal = document.getElementById('modal-caja-nueva');
+    if (modal) {
+        modal.classList.remove('active');
+        // Limpiar campos
+        var inputNum = document.getElementById('nueva-caja-numero');
+        var inputTel = document.getElementById('nueva-caja-telefono');
+        var errorMsg = document.getElementById('nueva-caja-error');
+        var passwordGroup = document.getElementById('nueva-caja-password-group');
+        
+        if (inputNum) inputNum.value = '';
+        if (inputTel) inputTel.value = '';
+        if (errorMsg) errorMsg.textContent = '';
+        if (passwordGroup) passwordGroup.style.display = 'none';
+    }
+}
+
+async function crearCajaNueva() {
+    var numero = document.getElementById('nueva-caja-numero').value.trim();
+    var telefono = document.getElementById('nueva-caja-telefono').value.trim();
+    var errorMsg = document.getElementById('nueva-caja-error');
+    
+    errorMsg.textContent = '';
+    
+    // Validaciones
+    if (!numero) {
+        errorMsg.textContent = '⚠️ Introduce tu número de caja';
+        document.getElementById('nueva-caja-numero').focus();
+        return;
+    }
+    
+    if (!telefono || telefono.length < 4) {
+        errorMsg.textContent = '⚠️ Introduce tu teléfono (mínimo 4 dígitos)';
+        document.getElementById('nueva-caja-telefono').focus();
+        return;
+    }
+    
+    // Generar contraseña con últimos 4 dígitos
+    var password = telefono.slice(-4);
+    
+    showLoading();
+    
+    try {
+        // Verificar si la caja ya existe
+        var respCheck = await supabase
+            .from('clientes')
+            .select('numero, password')
+            .eq('numero', parseInt(numero))
+            .maybeSingle();
+        
+        if (respCheck.error && respCheck.error.code !== 'PGRST116') {
+            throw new Error('Error verificando caja: ' + respCheck.error.message);
+        }
+        
+        if (respCheck.data) {
+            // La caja ya existe
+            if (respCheck.data.password) {
+                errorMsg.textContent = '⚠️ Esta caja ya tiene contraseña. Si es tuya, usa "Entrar" arriba.';
+                hideLoading();
+                return;
+            } else {
+                // La caja existe pero no tiene contraseña, actualizarla
+                var respUpdate = await supabase
+                    .from('clientes')
+                    .update({ 
+                        password: password,
+                        tel: telefono
+                    })
+                    .eq('numero', parseInt(numero));
+                
+                if (respUpdate.error) {
+                    throw new Error('Error actualizando caja: ' + respUpdate.error.message);
+                }
+                
+                // Login automático
+                await loginConCredenciales(numero, password);
+                cerrarModalCajaNueva();
+                return;
+            }
+        }
+        
+        // Crear nueva caja
+        var respCreate = await supabase
+            .from('clientes')
+            .insert({
+                numero: parseInt(numero),
+                password: password,
+                tel: telefono,
+                nombre: '',
+                bono_total: 0
+            });
+        
+        if (respCreate.error) {
+            throw new Error('Error creando caja: ' + respCreate.error.message);
+        }
+        
+        // Login automático
+        await loginConCredenciales(numero, password);
+        cerrarModalCajaNueva();
+        
+    } catch (err) {
+        console.error('Error creando caja:', err);
+        errorMsg.textContent = '❌ Error: ' + (err.message || 'No se pudo crear la caja');
+        hideLoading();
+    }
+}
+
+async function loginConCredenciales(numero, password) {
+    // Simular login con las credenciales
+    inputNumero.value = numero;
+    inputPassword.value = password;
+    await login();
+}
+
 function mostrarPopupCrearPassword() {
     telefonoVerificado = false;
     var popup = document.getElementById('popup-password');
