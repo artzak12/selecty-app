@@ -45,6 +45,21 @@
                     </svg>
                 </button>
                 <p id="login-error" class="error-msg"></p>
+                
+                <div class="divider-login">
+                    <span>o</span>
+                </div>
+                
+                <button id="btn-caja-nueva" class="btn-caja-nueva" onclick="mostrarModalCajaNueva()">
+                    <span class="btn-caja-nueva-icon">✨</span>
+                    <span class="btn-caja-nueva-text">
+                        <strong>¿Caja nueva?</strong>
+                        <small>Crea tu cuenta en segundos</small>
+                    </span>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M5 12h14M12 5l7 7-7 7"/>
+                    </svg>
+                </button>
             </div>
             <p class="footer-text">Adquiere tu caja en <a href="https://selecty.es" target="_blank">selecty.es</a></p>
         </div>
@@ -607,6 +622,45 @@
                 </div>
             </div>
             <button class="btn-cerrar-ayuda" onclick="cerrarAyudaRuleta()">Entendido</button>
+        </div>
+    </div>
+
+    <!-- Modal Caja Nueva -->
+    <div id="modal-caja-nueva" class="popup-overlay" onclick="cerrarModalCajaNueva()">
+        <div class="popup-box caja-nueva-box" onclick="event.stopPropagation();">
+            <div class="popup-header">
+                <span class="popup-icon">✨</span>
+                <h3>¡Bienvenido! Crea tu caja</h3>
+                <button class="popup-close" onclick="cerrarModalCajaNueva()" style="background: transparent; border: none; color: var(--text-secondary); font-size: 28px; cursor: pointer; position: absolute; top: 20px; right: 20px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 50%; transition: all 0.2s;">×</button>
+            </div>
+            <div class="popup-content">
+                <p class="popup-description" style="color: var(--text-secondary); margin-bottom: 24px; line-height: 1.6;">Ingresa tu número de caja y teléfono. Tu contraseña serán los últimos 4 dígitos de tu teléfono.</p>
+                
+                <div class="input-group">
+                    <label>📦 Número de caja</label>
+                    <input type="text" id="nueva-caja-numero" placeholder="Ej: 47" maxlength="10">
+                </div>
+                
+                <div class="input-group">
+                    <label>📱 Teléfono</label>
+                    <input type="tel" id="nueva-caja-telefono" placeholder="Ej: 612345678" maxlength="15">
+                    <small class="input-hint">Los últimos 4 dígitos serán tu contraseña</small>
+                </div>
+                
+                <div class="input-group" style="display: none;" id="nueva-caja-password-group">
+                    <label>🔒 Tu contraseña será</label>
+                    <div class="password-preview" id="nueva-caja-password-preview">----</div>
+                </div>
+                
+                <p id="nueva-caja-error" class="error-msg" style="margin-top: 16px; min-height: 20px;"></p>
+                
+                <div class="popup-buttons">
+                    <button id="btn-crear-caja" class="btn-primary" onclick="crearCajaNueva()">
+                        <span>✨ Crear mi caja</span>
+                    </button>
+                    <button class="btn-secondary" onclick="cerrarModalCajaNueva()">Cancelar</button>
+                </div>
+            </div>
         </div>
     </div>
 
