@@ -1339,6 +1339,254 @@ async function cargarDatosAdmin() {
 
 function sumarPrecios(arr) { var total = 0; for (var i = 0; i < arr.length; i++) total += parseFloat(arr[i].precio) || 0; return total; }
 
+// Costes por producto (confidencial - solo admin)
+var COSTES_PRODUCTO = {
+    'vintage': 2.4,
+    'paq.textil': 1.6,
+    'otros': 1.0,
+    'tortuguita': 1.6,
+    'panda': 1.6,
+    'chuches': 1.1
+};
+
+// Función para identificar categoría de producto
+function identificarCategoriaProducto(descripcion) {
+    if (!descripcion) return 'otros';
+    var desc = descripcion.toLowerCase();
+    if (desc.indexOf('vintage') >= 0) return 'vintage';
+    if (desc.indexOf('p.d.textil') >= 0 || desc.indexOf('paq.textil') >= 0 || desc.indexOf('paq textil') >= 0) return 'paq.textil';
+    if (desc.indexOf('tortuguita') >= 0) return 'tortuguita';
+    if (desc.indexOf('panda') >= 0) return 'panda';
+    if (desc.indexOf('chuches') >= 0) return 'chuches';
+    return 'otros';
+}
+
+// Función para obtener fecha según período
+function getFechaPorPeriodo(periodo) {
+    var hoy = new Date();
+    var fecha = new Date();
+    
+    switch(periodo) {
+        case 'hoy':
+            return getHoy();
+        case 'ayer':
+            return getAyer();
+        case 'antes-ayer':
+            fecha.setDate(hoy.getDate() - 2);
+            return fecha.getFullYear() + '-' + (fecha.getMonth()+1).toString().padStart(2,'0') + '-' + fecha.getDate().toString().padStart(2,'0');
+        case 'hace-3':
+            fecha.setDate(hoy.getDate() - 3);
+            return fecha.getFullYear() + '-' + (fecha.getMonth()+1).toString().padStart(2,'0') + '-' + fecha.getDate().toString().padStart(2,'0');
+        case 'semana':
+            return getInicioSemana();
+        case 'mes':
+            return getInicioMes();
+        default:
+            return getHoy();
+    }
+}
+
+// Función para filtrar ventas por período (considerando turnos)
+function filtrarVentasPorPeriodo(ventas, periodo) {
+    var fechaDesde = getFechaPorPeriodo(periodo);
+    
+    if (periodo === 'hoy') {
+        // Solo ventas de hoy desde las 08:00
+        return ventas.filter(function(v) {
+            if (v.fecha !== fechaDesde) return false;
+            if (!v.hora) return true;
+            var h = parseInt(v.hora.split(':')[0]);
+            return h >= 8;
+        });
+    } else if (periodo === 'ayer') {
+        // Ventas de ayer desde 08:00 + ventas de hoy antes de las 05:00
+        var hoy = getHoy();
+        return ventas.filter(function(v) {
+            if (v.fecha === fechaDesde) {
+                if (!v.hora) return true;
+                var h = parseInt(v.hora.split(':')[0]);
+                return h >= 8;
+            }
+            if (v.fecha === hoy) {
+                if (!v.hora) return false;
+                var h = parseInt(v.hora.split(':')[0]);
+                return h < 5;
+            }
+            return false;
+        });
+    } else if (periodo === 'antes-ayer' || periodo === 'hace-3') {
+        // Solo ventas de ese día específico
+        return ventas.filter(function(v) {
+            return v.fecha === fechaDesde;
+        });
+    } else if (periodo === 'semana') {
+        // Desde inicio de semana (lunes 08:00)
+        var inicioSemana = getInicioSemana();
+        return ventas.filter(function(v) {
+            if (v.fecha < inicioSemana) return false;
+            if (v.fecha > inicioSemana) return true;
+            // Si es el lunes, solo contar desde las 08:00
+            if (v.fecha === inicioSemana) {
+                if (!v.hora) return true;
+                var h = parseInt(v.hora.split(':')[0]);
+                return h >= 8;
+            }
+            return true;
+        });
+    } else if (periodo === 'mes') {
+        // Desde inicio del mes
+        return ventas.filter(function(v) {
+            return v.fecha >= fechaDesde;
+        });
+    }
+    
+    return ventas;
+}
+
+// Función para filtrar ventas por turno
+function filtrarPorTurno(ventas, turno) {
+    if (turno === 'todos') return ventas;
+    return ventas.filter(function(v) {
+        if (!v.hora) return false;
+        var h = parseInt(v.hora.split(':')[0]);
+        if (turno === 'manana') return h >= 10 && h < 18;
+        if (turno === 'tarde') return h >= 18 || h < 6;
+        return true;
+    });
+}
+
+// Función principal para calcular beneficios
+function calcularBeneficios() {
+    var periodo = document.getElementById('benef-periodo').value;
+    var turno = document.getElementById('benef-turno').value;
+    
+    // Filtrar ventas por período (considerando turnos y horas)
+    var ventasFiltradas = filtrarVentasPorPeriodo(todasLasVentas, periodo);
+    
+    // Filtrar por turno
+    ventasFiltradas = filtrarPorTurno(ventasFiltradas, turno);
+    
+    if (ventasFiltradas.length === 0) {
+        alert('No hay ventas para el período seleccionado');
+        return;
+    }
+    
+    // Calcular estadísticas generales
+    var totalVentas = sumarPrecios(ventasFiltradas);
+    var unidadesVendidas = ventasFiltradas.length;
+    var mediaVenta = unidadesVendidas > 0 ? totalVentas / unidadesVendidas : 0;
+    
+    // Clientes únicos
+    var clientesUnicos = {};
+    for (var i = 0; i < ventasFiltradas.length; i++) {
+        var num = ventasFiltradas[i].numero_cliente;
+        if (num) clientesUnicos[num] = true;
+    }
+    var numClientesUnicos = Object.keys(clientesUnicos).length;
+    
+    // Venta máxima y mínima
+    var precios = ventasFiltradas.map(function(v) { return parseFloat(v.precio) || 0; });
+    var ventaMax = precios.length > 0 ? Math.max.apply(null, precios) : 0;
+    var ventaMin = precios.length > 0 ? Math.min.apply(null, precios) : 0;
+    
+    // Calcular tiempo (primera y última venta)
+    var tiempos = [];
+    for (var i = 0; i < ventasFiltradas.length; i++) {
+        var v = ventasFiltradas[i];
+        if (v.fecha && v.hora) {
+            var fechaHora = v.fecha + ' ' + v.hora;
+            tiempos.push(new Date(fechaHora.replace(/-/g, '/')));
+        }
+    }
+    var tiempoTotal = 0;
+    var facturacionHora = 0;
+    if (tiempos.length > 1) {
+        tiempos.sort(function(a, b) { return a - b; });
+        var primera = tiempos[0];
+        var ultima = tiempos[tiempos.length - 1];
+        tiempoTotal = (ultima - primera) / (1000 * 60); // minutos
+        var horas = tiempoTotal / 60;
+        facturacionHora = horas > 0 ? totalVentas / horas : 0;
+    }
+    
+    // Actualizar estadísticas generales
+    document.getElementById('benef-ventas').textContent = formatMoney(totalVentas);
+    document.getElementById('benef-media-venta').textContent = formatMoney(mediaVenta);
+    document.getElementById('benef-unidades').textContent = unidadesVendidas;
+    document.getElementById('benef-clientes-unicos').textContent = numClientesUnicos;
+    document.getElementById('benef-venta-max').textContent = formatMoney(ventaMax);
+    document.getElementById('benef-venta-min').textContent = formatMoney(ventaMin);
+    
+    var horas = Math.floor(tiempoTotal / 60);
+    var minutos = Math.floor(tiempoTotal % 60);
+    document.getElementById('benef-tiempo').textContent = horas + 'h ' + minutos + 'm';
+    document.getElementById('benef-facturacion-hora').textContent = formatMoney(facturacionHora);
+    
+    // Calcular estadísticas por artículo
+    var statsPorArticulo = {
+        'vintage': { unidades: 0, importe: 0 },
+        'paq.textil': { unidades: 0, importe: 0 },
+        'otros': { unidades: 0, importe: 0 },
+        'tortuguita': { unidades: 0, importe: 0 },
+        'panda': { unidades: 0, importe: 0 },
+        'chuches': { unidades: 0, importe: 0 }
+    };
+    
+    for (var i = 0; i < ventasFiltradas.length; i++) {
+        var v = ventasFiltradas[i];
+        // Buscar en producto o descripcion (Supabase puede usar cualquiera)
+        var producto = v.producto || v.descripcion || '';
+        var categoria = identificarCategoriaProducto(producto);
+        var precio = parseFloat(v.precio) || 0;
+        
+        if (statsPorArticulo[categoria]) {
+            statsPorArticulo[categoria].unidades++;
+            statsPorArticulo[categoria].importe += precio;
+        }
+    }
+    
+    // Actualizar estadísticas por artículo
+    var categorias = ['vintage', 'paq-textil', 'otros', 'tortuguitas', 'pandas', 'chuches'];
+    var categoriasMap = {
+        'vintage': 'vintage',
+        'paq-textil': 'paq.textil',
+        'otros': 'otros',
+        'tortuguitas': 'tortuguita',
+        'pandas': 'panda',
+        'chuches': 'chuches'
+    };
+    
+    for (var i = 0; i < categorias.length; i++) {
+        var catHtml = categorias[i];
+        var catData = categoriasMap[catHtml];
+        var stats = statsPorArticulo[catData] || { unidades: 0, importe: 0 };
+        var media = stats.unidades > 0 ? stats.importe / stats.unidades : 0;
+        
+        document.getElementById('benef-' + catHtml + '-unidades').textContent = stats.unidades;
+        document.getElementById('benef-' + catHtml + '-importe').textContent = formatMoney(stats.importe);
+        document.getElementById('benef-' + catHtml + '-media').textContent = formatMoney(media);
+    }
+    
+    // Calcular beneficios
+    var beneficioTotal = 0;
+    for (var i = 0; i < categorias.length; i++) {
+        var catHtml = categorias[i];
+        var catData = categoriasMap[catHtml];
+        var stats = statsPorArticulo[catData] || { unidades: 0, importe: 0 };
+        var coste = COSTES_PRODUCTO[catData] || 0;
+        var costeTotal = stats.unidades * coste;
+        var beneficio = stats.importe - costeTotal;
+        beneficioTotal += beneficio;
+        
+        document.getElementById('benef-beneficio-' + catHtml + '-unidades').textContent = stats.unidades;
+        document.getElementById('benef-beneficio-' + catHtml + '-ingresos').textContent = formatMoney(stats.importe);
+        document.getElementById('benef-beneficio-' + catHtml + '-coste').textContent = formatMoney(costeTotal);
+        document.getElementById('benef-beneficio-' + catHtml + '-total').textContent = formatMoney(beneficio);
+    }
+    
+    document.getElementById('benef-total-beneficio').textContent = formatMoney(beneficioTotal);
+}
+
 function actualizarDashboard() {
     var hoy = getHoy(); var ayer = getAyer(); var inicioSemana = getInicioSemana();
     console.log('Fechas - Hoy:', hoy, 'Ayer:', ayer, 'Inicio Semana:', inicioSemana);
@@ -1430,17 +1678,6 @@ function actualizarDashboard() {
     document.getElementById('admin-bonos-total-hoy').textContent = formatMoney(totalBonosHoy);
     document.getElementById('admin-bonos-ayer').textContent = bonosAyer.length;
     document.getElementById('admin-bonos-total-ayer').textContent = formatMoney(totalBonosAyer);
-    
-    // Top 5
-    var clienteGastos = {};
-    for (var i = 0; i < todasLasVentas.length; i++) { var v = todasLasVentas[i]; if (!clienteGastos[v.numero_cliente]) clienteGastos[v.numero_cliente] = 0; clienteGastos[v.numero_cliente] += parseFloat(v.precio) || 0; }
-    var ranking = [];
-    for (var num in clienteGastos) { var cliente = todosLosClientes.find(function(c) { return c.numero == num; }); ranking.push({ numero: num, nombre: cliente ? cliente.nombre : 'Cliente ' + num, total: clienteGastos[num] }); }
-    ranking.sort(function(a, b) { return b.total - a.total; });
-    ranking = ranking.slice(0, 5);
-    var topHtml = '';
-    for (var i = 0; i < ranking.length; i++) { var r = ranking[i]; var posClass = i === 0 ? 'oro' : (i === 1 ? 'plata' : (i === 2 ? 'bronce' : 'normal')); topHtml += '<div class="top-cliente"><div class="top-posicion ' + posClass + '">' + (i+1) + '</div><div class="top-info"><div class="top-nombre">' + r.nombre + '</div><div class="top-numero">#' + r.numero + '</div></div><div class="top-total">' + formatMoney(r.total) + '</div></div>'; }
-    document.getElementById('top-clientes').innerHTML = topHtml || '<p style="color:#888;">Sin datos</p>';
 }
 
 // Función para calcular el total gastado de un cliente sumando sus ventas
@@ -1558,6 +1795,12 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     var adminBuscarCliente = document.getElementById('admin-buscar-cliente');
+    
+    // Conectar botón de calcular beneficios
+    var btnCalcularBenef = document.getElementById('btn-calcular-benef');
+    if (btnCalcularBenef) {
+        btnCalcularBenef.addEventListener('click', calcularBeneficios);
+    }
     if (adminBuscarCliente) {
         adminBuscarCliente.addEventListener('keypress', function(e) { 
             if (e.key === 'Enter') buscarCliente(); 
