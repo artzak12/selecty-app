@@ -2600,10 +2600,10 @@ var PREMIOS_RULETA_CONFIG = [
     { nombre: '20€ BONO', porcentaje: 1.05, color: '#2196F3', color2: '#1565C0', emoji: '💶' },
     { nombre: '30€ BONO', porcentaje: 0.32, color: '#9C27B0', color2: '#6A1B9A', emoji: '💶' },
     { nombre: '50€ BONO', porcentaje: 0.21, color: '#F44336', color2: '#C62828', emoji: '💶' },
-    { nombre: 'Tortuguita', porcentaje: 10.49, color: '#8BC34A', color2: '#689F38', emoji: '🐢' },
-    { nombre: 'Chuche', porcentaje: 10.49, color: '#FF9800', color2: '#F57C00', emoji: '🍬' },
-    { nombre: 'Panda', porcentaje: 10.49, color: '#000000', color2: '#FFFFFF', emoji: '🐼' },
-    { nombre: 'Cacharrito', porcentaje: 10.16, color: '#607D8B', color2: '#37474F', emoji: '🎮' }
+    { nombre: '1€ BONO', porcentaje: 10.49, color: '#8BC34A', color2: '#689F38', emoji: '💶' },
+    { nombre: '2€ BONO', porcentaje: 10.49, color: '#FF9800', color2: '#F57C00', emoji: '💶' },
+    { nombre: '2€ BONO', porcentaje: 10.49, color: '#000000', color2: '#FFFFFF', emoji: '💶' },
+    { nombre: '1€ BONO', porcentaje: 10.16, color: '#607D8B', color2: '#37474F', emoji: '💶' }
 ];
 
 // Crear ruleta visual con todos los premios
