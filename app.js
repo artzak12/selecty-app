@@ -1649,11 +1649,11 @@ function sumarPrecios(arr) { var total = 0; for (var i = 0; i < arr.length; i++)
 // Costes por producto (confidencial - solo admin)
 var COSTES_PRODUCTO = {
     'vintage': 2.4,
-    'paq.textil': 1.6,
+    'paq.textil': 1.9,
+    'paq.alemania': 3.0,
+    'paq.checa': 2.0,
     'otros': 1.0,
-    'tortuguita': 1.6,
-    'panda': 1.6,
-    'chuches': 1.1
+    'tortuguita': 1.6
 };
 
 // Función para identificar categoría de producto
@@ -1662,9 +1662,9 @@ function identificarCategoriaProducto(descripcion) {
     var desc = descripcion.toLowerCase();
     if (desc.indexOf('vintage') >= 0) return 'vintage';
     if (desc.indexOf('p.d.textil') >= 0 || desc.indexOf('paq.textil') >= 0 || desc.indexOf('paq textil') >= 0) return 'paq.textil';
+    if (desc.indexOf('paq alemania') >= 0 || desc.indexOf('paquetes alemania') >= 0 || desc.indexOf('paq alm') >= 0) return 'paq.alemania';
+    if (desc.indexOf('paq rep.checa') >= 0 || desc.indexOf('paq rep checa') >= 0 || desc.indexOf('paquetes rep.checa') >= 0 || desc.indexOf('paquetes rep checa') >= 0 || desc.indexOf('paq chq') >= 0) return 'paq.checa';
     if (desc.indexOf('tortuguita') >= 0) return 'tortuguita';
-    if (desc.indexOf('panda') >= 0) return 'panda';
-    if (desc.indexOf('chuches') >= 0) return 'chuches';
     return 'otros';
 }
 
@@ -1697,53 +1697,72 @@ function getFechaPorPeriodo(periodo) {
 function filtrarVentasPorPeriodo(ventas, periodo) {
     var fechaDesde = getFechaPorPeriodo(periodo);
     
+    // Ventanas por periodo basadas en 10:00 -> 10:00 (para incluir madrugada del LIVE)
+    // Definimos "inicioHoy" como el inicio de la ventana actual (a las 10:00). Si aún no son las 10:00,
+    // la ventana actual empezó ayer a las 10:00.
+    var now = new Date();
+    var inicioHoy = new Date(now);
+    inicioHoy.setHours(10, 0, 0, 0);
+    if (now < inicioHoy) {
+        inicioHoy.setDate(inicioHoy.getDate() - 1);
+    }
+    // Parser consistente de fecha/hora de venta
+    function _ventaDateTime(v) {
+        if (!v || !v.fecha) return null;
+        var hora = v.hora ? String(v.hora) : '00:00:00';
+        var dt = new Date(String(v.fecha).replace(/-/g, '/') + ' ' + hora);
+        return isNaN(dt.getTime()) ? null : dt;
+    }
+
     if (periodo === 'hoy') {
-        // Solo ventas de hoy desde las 08:00
+        var inicio = new Date(inicioHoy);
+        var fin = new Date(inicioHoy);
+        fin.setDate(fin.getDate() + 1);
         return ventas.filter(function(v) {
-            if (v.fecha !== fechaDesde) return false;
-            if (!v.hora) return true;
-            var h = parseInt(v.hora.split(':')[0]);
-            return h >= 8;
+            var dt = _ventaDateTime(v);
+            return dt ? (dt >= inicio && dt < fin) : false;
         });
     } else if (periodo === 'ayer') {
-        // Ventas de ayer desde 08:00 + ventas de hoy antes de las 05:00
-        var hoy = getHoy();
+        // Ventana anterior: (inicioHoy - 1 día) -> inicioHoy
+        var inicio = new Date(inicioHoy);
+        inicio.setDate(inicio.getDate() - 1);
+        var fin = new Date(inicioHoy);
         return ventas.filter(function(v) {
-            if (v.fecha === fechaDesde) {
-                if (!v.hora) return true;
-                var h = parseInt(v.hora.split(':')[0]);
-                return h >= 8;
-            }
-            if (v.fecha === hoy) {
-                if (!v.hora) return false;
-                var h = parseInt(v.hora.split(':')[0]);
-                return h < 5;
-            }
-            return false;
+            var dt = _ventaDateTime(v);
+            return dt ? (dt >= inicio && dt < fin) : false;
         });
     } else if (periodo === 'antes-ayer' || periodo === 'hace-3') {
-        // Solo ventas de ese día específico
+        // Ventanas fijas hacia atrás desde inicioHoy
+        var diasAtras = (periodo === 'antes-ayer') ? 2 : 3;
+        var inicio = new Date(inicioHoy);
+        inicio.setDate(inicio.getDate() - diasAtras);
+        var fin = new Date(inicioHoy);
+        fin.setDate(fin.getDate() - (diasAtras - 1));
         return ventas.filter(function(v) {
-            return v.fecha === fechaDesde;
+            var dt = _ventaDateTime(v);
+            return dt ? (dt >= inicio && dt < fin) : false;
         });
     } else if (periodo === 'semana') {
-        // Desde inicio de semana (lunes 08:00)
-        var inicioSemana = getInicioSemana();
+        // Semana = lunes 10:00 -> lunes 10:00 (7 días) según la ventana actual
+        var inicio = new Date(inicioHoy);
+        // getDay(): 0 domingo ... 6 sábado. Queremos lunes como inicio.
+        var diasDesdeLunes = (inicio.getDay() + 6) % 7;
+        inicio.setDate(inicio.getDate() - diasDesdeLunes);
+        inicio.setHours(10, 0, 0, 0);
+        var fin = new Date(inicio);
+        fin.setDate(fin.getDate() + 7);
         return ventas.filter(function(v) {
-            if (v.fecha < inicioSemana) return false;
-            if (v.fecha > inicioSemana) return true;
-            // Si es el lunes, solo contar desde las 08:00
-            if (v.fecha === inicioSemana) {
-                if (!v.hora) return true;
-                var h = parseInt(v.hora.split(':')[0]);
-                return h >= 8;
-            }
-            return true;
+            var dt = _ventaDateTime(v);
+            return dt ? (dt >= inicio && dt < fin) : false;
         });
     } else if (periodo === 'mes') {
-        // Desde inicio del mes
+        // Mes = día 1 a las 10:00 -> en adelante (según la ventana actual)
+        var inicio = new Date(inicioHoy);
+        inicio.setDate(1);
+        inicio.setHours(10, 0, 0, 0);
         return ventas.filter(function(v) {
-            return v.fecha >= fechaDesde;
+            var dt = _ventaDateTime(v);
+            return dt ? (dt >= inicio) : false;
         });
     }
     
@@ -1838,10 +1857,10 @@ function calcularBeneficios() {
     var statsPorArticulo = {
         'vintage': { unidades: 0, importe: 0 },
         'paq.textil': { unidades: 0, importe: 0 },
+        'paq.alemania': { unidades: 0, importe: 0 },
+        'paq.checa': { unidades: 0, importe: 0 },
         'otros': { unidades: 0, importe: 0 },
-        'tortuguita': { unidades: 0, importe: 0 },
-        'panda': { unidades: 0, importe: 0 },
-        'chuches': { unidades: 0, importe: 0 }
+        'tortuguita': { unidades: 0, importe: 0 }
     };
     
     for (var i = 0; i < ventasFiltradas.length; i++) {
@@ -1858,14 +1877,14 @@ function calcularBeneficios() {
     }
     
     // Actualizar estadísticas por artículo
-    var categorias = ['vintage', 'paq-textil', 'otros', 'tortuguitas', 'pandas', 'chuches'];
+    var categorias = ['vintage', 'paq-textil', 'paq-alemania', 'paq-checa', 'otros', 'tortuguitas'];
     var categoriasMap = {
         'vintage': 'vintage',
         'paq-textil': 'paq.textil',
+        'paq-alemania': 'paq.alemania',
+        'paq-checa': 'paq.checa',
         'otros': 'otros',
-        'tortuguitas': 'tortuguita',
-        'pandas': 'panda',
-        'chuches': 'chuches'
+        'tortuguitas': 'tortuguita'
     };
     
     for (var i = 0; i < categorias.length; i++) {
