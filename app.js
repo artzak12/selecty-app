@@ -1870,6 +1870,10 @@ function calcularBeneficios() {
         var categoria = identificarCategoriaProducto(producto);
         var precio = parseFloat(v.precio) || 0;
         
+        // Si la categoría no existe (o viene vacía), contarla como "otros"
+        if (!categoria || !statsPorArticulo[categoria]) {
+            categoria = 'otros';
+        }
         if (statsPorArticulo[categoria]) {
             statsPorArticulo[categoria].unidades++;
             statsPorArticulo[categoria].importe += precio;
