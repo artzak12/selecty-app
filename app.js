@@ -1648,10 +1648,11 @@ function sumarPrecios(arr) { var total = 0; for (var i = 0; i < arr.length; i++)
 
 // Costes por producto (confidencial - solo admin)
 var COSTES_PRODUCTO = {
-    'vintage': 2.4,
-    'paq.textil': 1.9,
-    'paq.alemania': 3.0,
-    'paq.checa': 2.0,
+    'vintage': 3.6,
+    'paq.textil': 1.6,
+    'paq.alemania': 3.6,
+    'paq.checa': 4.2,
+    'prod.nuevo': 2.0,
     'otros': 1.0,
     'tortuguita': 1.6
 };
@@ -1660,11 +1661,12 @@ var COSTES_PRODUCTO = {
 function identificarCategoriaProducto(descripcion) {
     if (!descripcion) return 'otros';
     var desc = descripcion.toLowerCase();
-    if (desc.indexOf('vintage') >= 0) return 'vintage';
-    if (desc.indexOf('p.d.textil') >= 0 || desc.indexOf('paq.textil') >= 0 || desc.indexOf('paq textil') >= 0) return 'paq.textil';
-    if (desc.indexOf('paq alemania') >= 0 || desc.indexOf('paquetes alemania') >= 0 || desc.indexOf('paq alm') >= 0) return 'paq.alemania';
-    if (desc.indexOf('paq rep.checa') >= 0 || desc.indexOf('paq rep checa') >= 0 || desc.indexOf('paquetes rep.checa') >= 0 || desc.indexOf('paquetes rep checa') >= 0 || desc.indexOf('paq chq') >= 0) return 'paq.checa';
     if (desc.indexOf('tortuguita') >= 0) return 'tortuguita';
+    if (desc.indexOf('paq no textil') >= 0 || desc.indexOf('paq rep.checa') >= 0 || desc.indexOf('paq rep checa') >= 0 || desc.indexOf('paquetes rep.checa') >= 0 || desc.indexOf('paquetes rep checa') >= 0 || desc.indexOf('paq chq') >= 0) return 'paq.checa';
+    if (desc.indexOf('p.d.textil') >= 0 || desc.indexOf('paq.textil') >= 0 || desc.indexOf('paq textil') >= 0) return 'paq.textil';
+    if (desc.indexOf('paq bolsos') >= 0 || desc.indexOf('paq alemania') >= 0 || desc.indexOf('paquetes alemania') >= 0 || desc.indexOf('paq alm') >= 0) return 'paq.alemania';
+    if ((desc.indexOf('paq calzado') >= 0 || desc.indexOf('vintage') >= 0) && desc.indexOf('vintage party') < 0) return 'vintage';
+    if (desc.indexOf('prod nv') >= 0 || desc.indexOf('prod.nv') >= 0 || desc.indexOf('producto nuevo') >= 0) return 'prod.nuevo';
     return 'otros';
 }
 
@@ -1859,6 +1861,7 @@ function calcularBeneficios() {
         'paq.textil': { unidades: 0, importe: 0 },
         'paq.alemania': { unidades: 0, importe: 0 },
         'paq.checa': { unidades: 0, importe: 0 },
+        'prod.nuevo': { unidades: 0, importe: 0 },
         'otros': { unidades: 0, importe: 0 },
         'tortuguita': { unidades: 0, importe: 0 }
     };
@@ -1881,12 +1884,13 @@ function calcularBeneficios() {
     }
     
     // Actualizar estadísticas por artículo
-    var categorias = ['vintage', 'paq-textil', 'paq-alemania', 'paq-checa', 'otros', 'tortuguitas'];
+    var categorias = ['vintage', 'paq-textil', 'paq-alemania', 'paq-checa', 'prod-nuevo', 'otros', 'tortuguitas'];
     var categoriasMap = {
         'vintage': 'vintage',
         'paq-textil': 'paq.textil',
         'paq-alemania': 'paq.alemania',
         'paq-checa': 'paq.checa',
+        'prod-nuevo': 'prod.nuevo',
         'otros': 'otros',
         'tortuguitas': 'tortuguita'
     };
@@ -2336,6 +2340,31 @@ async function enviarMiCaja(event) {
 
 let puntosCliente = null;
 
+// Niveles solo por puntos acumulados (igual que sistema_puntos_ruleta.py tras quitar el requisito de giros)
+var NIVELES_POR_PUNTOS_APP = [
+    { nivel: 1, nombre: '🌱 Novato', puntos_min: 0 },
+    { nivel: 2, nombre: '🥉 Bronce', puntos_min: 5 },
+    { nivel: 3, nombre: '🥈 Plata', puntos_min: 15 },
+    { nivel: 4, nombre: '🥇 Oro', puntos_min: 30 },
+    { nivel: 5, nombre: '💎 Diamante', puntos_min: 60 },
+    { nivel: 6, nombre: '👑 Real', puntos_min: 120 },
+    { nivel: 7, nombre: '⭐ Élite', puntos_min: 240 },
+    { nivel: 8, nombre: '🌟 Maestro', puntos_min: 480 },
+    { nivel: 9, nombre: '🏆 Gran Maestro', puntos_min: 960 },
+    { nivel: 10, nombre: '💫 Supremo', puntos_min: 1920 }
+];
+
+function nivelSegunPuntosAcumuladosApp(puntosAcumulados) {
+    var p = parseInt(puntosAcumulados, 10);
+    if (isNaN(p) || p < 0) p = 0;
+    for (var i = NIVELES_POR_PUNTOS_APP.length - 1; i >= 0; i--) {
+        if (p >= NIVELES_POR_PUNTOS_APP[i].puntos_min) {
+            return NIVELES_POR_PUNTOS_APP[i];
+        }
+    }
+    return NIVELES_POR_PUNTOS_APP[0];
+}
+
 // Cargar puntos del cliente desde Supabase
 async function cargarPuntosCliente() {
     if (!clienteActual) {
@@ -2374,6 +2403,20 @@ async function cargarPuntosCliente() {
         
         if (resp.data) {
             puntosCliente = resp.data;
+            // Corregir nivel en BD si quedó en Novato por la antigua regla (exigía giros de ruleta)
+            var corr = nivelSegunPuntosAcumuladosApp(puntosCliente.puntos_acumulados);
+            var dbNivel = parseInt(puntosCliente.nivel_actual, 10) || 1;
+            if (dbNivel !== corr.nivel || (puntosCliente.nombre_nivel || '') !== corr.nombre) {
+                puntosCliente.nivel_actual = corr.nivel;
+                puntosCliente.nombre_nivel = corr.nombre;
+                var up = await supabase
+                    .from('puntos_clientes')
+                    .update({ nivel_actual: corr.nivel, nombre_nivel: corr.nombre })
+                    .eq('numero', clienteActual.numero);
+                if (up.error) {
+                    console.warn('[PUNTOS] No se pudo guardar nivel corregido:', up.error);
+                }
+            }
         } else {
             // Cliente no tiene puntos aún, crear valores por defecto
             puntosCliente = {
@@ -2452,8 +2495,12 @@ function actualizarVistaPuntos() {
     // Asegurar que los valores sean números
     var puntosDisp = parseInt(puntosCliente.puntos_disponibles) || 0;
     var puntosAcum = parseInt(puntosCliente.puntos_acumulados) || 0;
-    var nivelActual = parseInt(puntosCliente.nivel_actual) || 1;
-    var nombreNivel = puntosCliente.nombre_nivel || '🌱 Novato';
+    // Nivel según puntos acumulados (no solo lo guardado en BD; evita Novato erróneo)
+    var nivelInfo = nivelSegunPuntosAcumuladosApp(puntosAcum);
+    var nivelActual = nivelInfo.nivel;
+    var nombreNivel = nivelInfo.nombre;
+    puntosCliente.nivel_actual = nivelActual;
+    puntosCliente.nombre_nivel = nombreNivel;
     
     puntosDisponiblesEl.textContent = puntosDisp;
     puntosAcumuladosEl.textContent = puntosAcum;
