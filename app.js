@@ -1,4 +1,5 @@
-// APP_CLIENTES v2.0 - Fix: Eliminada declaración duplicada de 'supabase'
+// APP_CLIENTES v2.1 - Saldo: todas las ventas (paginación) + bono actualizado desde Supabase
+const APP_VERSION = '2.1.20260518';
 // Variables globales
 var loginScreen, mainScreen, adminScreen, loadingOverlay;
 var inputNumero, inputPassword, btnLogin, loginError, btnLogout, btnAdminLogout;
@@ -171,9 +172,8 @@ async function verificarCambiosYNotificar() {
                     'Se ha añadido ' + importe.toFixed(0) + '€ a tu saldo disponible',
                     '💰'
                 );
-                // 🎯 RECARGAR PUNTOS cuando se detecta un nuevo bono
+                await actualizarPantallaPrincipal();
                 cargarPuntosCliente();
-                // Actualizar estado anterior
                 estadoAnterior.bonos = respBonos.data.slice(0, 5);
             }
         }
@@ -205,8 +205,8 @@ async function verificarCambiosYNotificar() {
                     descripcion + ' - ' + precio.toFixed(2) + '€',
                     '📦'
                 );
-                // Actualizar estado anterior
-                estadoAnterior.ventas = respVentas.data.slice(0, 10);
+                await actualizarPantallaPrincipal();
+                estadoAnterior.ventas = ventasCliente.slice(0, 10);
             }
         }
         
@@ -386,22 +386,31 @@ async function recargarDatosAdmin() {
     alert('Datos recargados - Total ventas: ' + todasLasVentas.length);
 }
 
+async function refrescarClienteDesdeSupabase() {
+    if (!clienteActual) return;
+    var resp = await supabase
+        .from('clientes')
+        .select('*')
+        .eq('numero', clienteActual.numero)
+        .maybeSingle();
+    if (resp.error) throw resp.error;
+    if (resp.data) clienteActual = resp.data;
+}
+
+async function actualizarPantallaPrincipal() {
+    if (!clienteActual) return;
+    await refrescarClienteDesdeSupabase();
+    await cargarVentas();
+    mostrarDatosCliente();
+}
+
 async function recargarDatosCliente() {
     if (!clienteActual) return;
     var btnRecargar = document.getElementById('btn-recargar-cliente');
     if (btnRecargar) btnRecargar.classList.add('rotating');
     showLoading();
     try {
-        // Recargar datos del cliente desde Supabase
-        var resp = await supabase.from('clientes').select('*').eq('numero', clienteActual.numero).maybeSingle();
-        if (resp.data) {
-            clienteActual = resp.data;
-        }
-        // Recargar ventas
-        await cargarVentas();
-        // Actualizar la pantalla
-        mostrarDatosCliente();
-        // Verificar cambios y notificar (sin esperar)
+        await actualizarPantallaPrincipal();
         verificarCambiosYNotificar();
     } catch (err) {
         console.error('Error al recargar:', err);
@@ -502,10 +511,13 @@ async function login() {
             localStorage.removeItem('clientePassword');
         }
         
-        await cargarVentas();
-        mostrarDatosCliente();
+        await actualizarPantallaPrincipal();
         showScreen(mainScreen);
         hideLoading();
+        
+        console.log('APP ' + APP_VERSION + ' | Caja #' + clienteActual.numero +
+            ' | ventas=' + ventasCliente.length +
+            ' | saldo calculado en pantalla');
         
         // Iniciar sistema de notificaciones después del login
         iniciarSistemaNotificaciones();
@@ -538,26 +550,42 @@ async function login() {
     }
 }
 
-async function cargarVentas() {
-    if (!clienteActual) return;
-    try {
-        // Cargar ventas ordenadas por fecha DESC y hora DESC (más reciente arriba)
+async function fetchTodasVentasCliente(numeroCliente) {
+    var num = parseInt(numeroCliente, 10);
+    if (isNaN(num)) return [];
+    var all = [];
+    var pageSize = 1000;
+    var offset = 0;
+    var hasMore = true;
+    while (hasMore) {
         var resp = await supabase
             .from('ventas')
             .select('*')
-            .eq('numero_cliente', clienteActual.numero)
-            .order('fecha', { ascending: false })
-            .order('hora', { ascending: false });
-        
-        if (!resp.error && resp.data) {
-            ventasCliente = resp.data;
-            // Ordenar manualmente por fecha+hora (más reciente primero) por si acaso
-            ventasCliente.sort(function(a, b) {
-                var fechaA = (a.fecha || '') + ' ' + (a.hora || '00:00:00');
-                var fechaB = (b.fecha || '') + ' ' + (b.hora || '00:00:00');
-                return fechaB.localeCompare(fechaA);
-            });
+            .eq('numero_cliente', num)
+            .order('id', { ascending: true })
+            .range(offset, offset + pageSize - 1);
+        if (resp.error) throw resp.error;
+        if (resp.data && resp.data.length > 0) {
+            all = all.concat(resp.data);
+            offset += pageSize;
+            hasMore = resp.data.length === pageSize;
+        } else {
+            hasMore = false;
         }
+    }
+    console.log('Ventas cargadas caja #' + num + ': ' + all.length + ' (todas las páginas)');
+    return all;
+}
+
+async function cargarVentas() {
+    if (!clienteActual) return;
+    try {
+        ventasCliente = await fetchTodasVentasCliente(clienteActual.numero);
+        ventasCliente.sort(function(a, b) {
+            var fechaA = (a.fecha || '') + ' ' + (a.hora || '00:00:00');
+            var fechaB = (b.fecha || '') + ' ' + (b.hora || '00:00:00');
+            return fechaB.localeCompare(fechaA);
+        });
     } catch (err) {
         console.error('Error cargando ventas:', err);
     }
@@ -568,12 +596,12 @@ function mostrarDatosCliente() {
     document.getElementById('header-numero').textContent = '#' + clienteActual.numero;
     document.getElementById('header-nombre').textContent = clienteActual.nombre || 'Cliente';
     var bonoTotal = parseFloat(clienteActual.bono_total) || 0;
-    // CALCULAR bono gastado sumando las ventas (siempre actualizado)
+    // Saldo = bono_total − suma de TODAS las ventas (no usar bono_gastado de la tabla: puede estar desactualizado)
     var bonoGastado = 0;
     for (var i = 0; i < ventasCliente.length; i++) {
         bonoGastado += parseFloat(ventasCliente[i].precio) || 0;
     }
-    var bonoDisponible = bonoTotal - bonoGastado;
+    var bonoDisponible = Math.round((bonoTotal - bonoGastado) * 100) / 100;
     // Mostrar el saldo disponible (incluyendo negativos con estilo diferente)
     var bonoElement = document.getElementById('bono-disponible');
     bonoElement.textContent = formatMoney(bonoDisponible);
@@ -1577,8 +1605,7 @@ async function guardarNuevaPassword() {
             localStorage.setItem('clientePassword', password);
         }
         cerrarPopupPassword();
-        await cargarVentas();
-        mostrarDatosCliente();
+        await actualizarPantallaPrincipal();
         showScreen(mainScreen);
     } catch (err) { errorMsg.textContent = 'Error al guardar'; }
 }
@@ -2109,10 +2136,12 @@ async function borrarVentaAdmin(ventaId) {
     catch (err) { alert('Error'); }
 }
 
-if ('serviceWorker' in navigator) { 
-    window.addEventListener('load', function() { 
-        navigator.serviceWorker.register('sw.js').catch(function() {}); 
-    }); 
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function() {
+        navigator.serviceWorker.register('sw.js?v=4').then(function(reg) {
+            if (reg && reg.update) reg.update();
+        }).catch(function() {});
+    });
 }
 
 // Conectar eventos adicionales
