@@ -1,15 +1,16 @@
-const CACHE_NAME = 'selecty-v2'; // Incrementar versión para forzar actualización del SW
+const CACHE_NAME = 'selecty-v4';
 const urlsToCache = [
     '/',
     '/index.html',
     '/style.css',
-    '/app.js',
     '/manifest.json',
     'https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap'
 ];
 
-// Instalación
+// app.js NO se precachea (saldo requiere JS actualizado con paginación de ventas)
+
 self.addEventListener('install', event => {
+    self.skipWaiting();
     event.waitUntil(
         caches.open(CACHE_NAME)
             .then(cache => cache.addAll(urlsToCache))
@@ -20,9 +21,12 @@ self.addEventListener('install', event => {
 self.addEventListener('fetch', event => {
     const url = new URL(event.request.url);
     
-    // NO cachear peticiones a Supabase (son dinámicas y pueden ser PATCH/POST/PUT)
     if (url.hostname.includes('supabase.co') || url.hostname.includes('supabase')) {
-        // Permitir que las peticiones a Supabase pasen directamente sin cachear
+        event.respondWith(fetch(event.request));
+        return;
+    }
+
+    if (url.pathname.endsWith('/app.js') || url.pathname.endsWith('app.js')) {
         event.respondWith(fetch(event.request));
         return;
     }
@@ -57,7 +61,6 @@ self.addEventListener('fetch', event => {
     );
 });
 
-// Activación - limpiar caches antiguas
 self.addEventListener('activate', event => {
     event.waitUntil(
         caches.keys().then(cacheNames => {
@@ -68,6 +71,8 @@ self.addEventListener('activate', event => {
                     }
                 })
             );
+        }).then(function() {
+            return self.clients.claim();
         })
     );
 });
